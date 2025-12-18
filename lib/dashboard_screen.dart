@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
+import 'semester_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> branches = [
@@ -19,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () => AuthService().logout(),
-          )
+          ),
         ],
       ),
       body: Padding(
@@ -34,8 +35,13 @@ class DashboardScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             return GestureDetector(
               onTap: () {
-                // We will add navigation to Semester Selection here next
-                print("Selected ${branches[index]['name']}");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        SemesterScreen(branchName: branches[index]['name']),
+                  ),
+                );
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -46,12 +52,19 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(branches[index]['icon'], size: 50, color: branches[index]['color']),
+                    Icon(
+                      branches[index]['icon'],
+                      size: 50,
+                      color: branches[index]['color'],
+                    ),
                     SizedBox(height: 10),
                     Text(
                       branches[index]['name'],
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
