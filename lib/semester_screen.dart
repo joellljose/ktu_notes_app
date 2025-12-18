@@ -4,7 +4,7 @@ import 'package:ai_ktu_notes_app/subject_screen.dart';
 class SemesterScreen extends StatelessWidget {
   final String branchName;
 
-  const SemesterScreen({super.key, required this.branchName});
+  SemesterScreen({super.key, required this.branchName});
 
   static const List<String> semesters = [
     "Semester 1",
