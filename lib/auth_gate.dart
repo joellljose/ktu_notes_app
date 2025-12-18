@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; // Make sure this is imported
+import 'login_screen.dart';
+import 'dashboard_screen.dart'; // Import the new dashboard
 
 class AuthGate extends StatelessWidget {
   @override
@@ -8,14 +9,12 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // If the snapshot has user data, they are logged in
-        if (snapshot.hasData) {
-          return Scaffold(
-            body: Center(child: Text("Welcome! You are logged in.")),
-          );
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-
-        // Otherwise, show the Login Screen
+        if (snapshot.hasData) {
+          return DashboardScreen(); // Show Dashboard if logged in
+        }
         return LoginScreen();
       },
     );
