@@ -30,7 +30,7 @@ class StudentDashboard extends StatelessWidget {
           },
           child: Text("KTU Subjects"),
         ),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.teal,
         actions: [
           // PROFILE ICON: Navigate to Profile Screen
           IconButton(
@@ -89,7 +89,7 @@ class StudentDashboard extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16),
-                color: Colors.blueAccent.withOpacity(0.1),
+                color: Colors.teal.withOpacity(0.1),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -97,7 +97,7 @@ class StudentDashboard extends StatelessWidget {
                       "$semester | $branch",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
+                        color: Colors.teal,
                       ),
                     ),
                     Row(
@@ -117,7 +117,7 @@ class StudentDashboard extends StatelessWidget {
                             );
                           },
                         ),
-                        Icon(Icons.school, color: Colors.blueAccent, size: 20),
+                        Icon(Icons.school, color: Colors.teal, size: 20),
                       ],
                     ),
                   ],
@@ -182,7 +182,7 @@ class StudentDashboard extends StatelessWidget {
                               backgroundColor: Colors.blueAccent.withOpacity(
                                 0.2,
                               ),
-                              child: Icon(Icons.book, color: Colors.blueAccent),
+                              child: Icon(Icons.book, color: Colors.teal),
                             ),
                             title: Text(
                               subjects[index],

@@ -40,7 +40,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
   Future<void> _startSession() async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/participatory-start'),
+        Uri.parse('https://api-gemini-notes.onrender.com/participatory-start'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'text': widget.noteSummary}),
       );
@@ -66,7 +66,9 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/participatory-evaluate'),
+        Uri.parse(
+          'https://api-gemini-notes.onrender.com/participatory-evaluate',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'text': widget.noteSummary,

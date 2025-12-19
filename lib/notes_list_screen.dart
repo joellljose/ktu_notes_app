@@ -91,7 +91,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
                 itemCount: notes.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    leading: Icon(Icons.description, color: Colors.blue),
+                    leading: Icon(Icons.description, color: Colors.teal),
                     title: Text(notes[index]['title']),
                     subtitle: Text("AI Summary Available"),
                     onTap: () {
@@ -135,7 +135,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: isProcessing ? null : uploadAndProcessWithAI,
         child: Icon(Icons.psychology), // "Brain" icon for AI
-        backgroundColor: isProcessing ? Colors.grey : Colors.blueAccent,
+        backgroundColor: isProcessing ? Colors.grey : Colors.teal,
       ),
     );
   }

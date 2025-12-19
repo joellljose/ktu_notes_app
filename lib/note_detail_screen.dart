@@ -24,9 +24,9 @@ class NoteDetailScreen extends StatelessWidget {
     );
 
     try {
-      // 10.0.2.2 is the special IP to reach your PC from the Android Emulator
+      // Production URL
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/generate-quiz'),
+        Uri.parse('https://api-gemini-notes.onrender.com/generate-quiz'),
         headers: {'Content-Type': 'application/json'},
         // Send the summary text instead of the URL
         body: json.encode({'text': summary}),
@@ -56,7 +56,7 @@ class NoteDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), backgroundColor: Colors.blueAccent),
+      appBar: AppBar(title: Text(title), backgroundColor: Colors.teal),
       body: Column(
         children: [
           Expanded(flex: 3, child: SfPdfViewer.network(pdfUrl)),

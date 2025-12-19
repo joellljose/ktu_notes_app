@@ -4,7 +4,11 @@ import 'note_detail_screen.dart';
 
 class ModuleListScreen extends StatelessWidget {
   final String branch, semester, subject;
-  ModuleListScreen({required this.branch, required this.semester, required this.subject});
+  ModuleListScreen({
+    required this.branch,
+    required this.semester,
+    required this.subject,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +17,7 @@ class ModuleListScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(subject),
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: Colors.teal,
           bottom: TabBar(
             isScrollable: true,
             tabs: List.generate(6, (i) => Tab(text: "Module ${i + 1}")),
@@ -22,15 +26,18 @@ class ModuleListScreen extends StatelessWidget {
         body: TabBarView(
           children: List.generate(6, (i) {
             return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('notes')
+              stream: FirebaseFirestore.instance
+                  .collection('notes')
                   .where('subject', isEqualTo: subject)
                   .where('module', isEqualTo: "Module ${i + 1}")
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  return Center(child: CircularProgressIndicator());
                 var docs = snapshot.data!.docs;
 
-                if (docs.isEmpty) return Center(child: Text("No notes in Module ${i + 1}"));
+                if (docs.isEmpty)
+                  return Center(child: Text("No notes in Module ${i + 1}"));
 
                 return ListView.builder(
                   itemCount: docs.length,
@@ -39,13 +46,16 @@ class ModuleListScreen extends StatelessWidget {
                     return ListTile(
                       leading: Icon(Icons.description, color: Colors.redAccent),
                       title: Text(data['title'] ?? "Untitled Note"),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (context) => NoteDetailScreen(
-                          title: data['title'] ?? "Note",
-                          pdfUrl: data['url'] ?? "",
-                          summary: data['summary'] ?? "No summary.",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NoteDetailScreen(
+                            title: data['title'] ?? "Note",
+                            pdfUrl: data['url'] ?? "",
+                            summary: data['summary'] ?? "No summary.",
+                          ),
                         ),
-                      )),
+                      ),
                     );
                   },
                 );

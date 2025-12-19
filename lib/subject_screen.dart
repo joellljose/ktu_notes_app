@@ -13,7 +13,7 @@ class SubjectScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("$semester - $branch"),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.teal,
       ),
       body: StreamBuilder<QuerySnapshot>(
         // Query: Fetch only subjects that match the selected branch and semester
@@ -26,7 +26,7 @@ class SubjectScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
-          
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(child: Text("No subjects found for $semester"));
           }
@@ -43,10 +43,16 @@ class SubjectScreen extends StatelessWidget {
                 margin: EdgeInsets.symmetric(vertical: 8),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    child: Text(subject['name'][0], style: TextStyle(color: Colors.white)),
+                    backgroundColor: Colors.teal,
+                    child: Text(
+                      subject['name'][0],
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                  title: Text(subject['name'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    subject['name'],
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text("Code: ${subject['code']}"),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () {

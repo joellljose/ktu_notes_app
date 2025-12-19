@@ -4,7 +4,7 @@ import 'semester_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> branches = [
-    {"name": "Computer Science", "icon": Icons.computer, "color": Colors.blue},
+    {"name": "Computer Science", "icon": Icons.computer, "color": Colors.teal},
     {"name": "Electronics", "icon": Icons.memory, "color": Colors.orange},
     {"name": "Mechanical", "icon": Icons.settings, "color": Colors.red},
     {"name": "Civil", "icon": Icons.apartment, "color": Colors.green},
