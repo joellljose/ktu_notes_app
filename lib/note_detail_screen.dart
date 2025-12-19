@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:crypto/crypto.dart';
 import 'quiz_screen.dart';
 import 'participatory_study_screen.dart';
 
-class NoteDetailScreen extends StatelessWidget {
+class NoteDetailScreen extends StatefulWidget {
   final String title, pdfUrl, summary;
 
   NoteDetailScreen({
@@ -13,6 +16,80 @@ class NoteDetailScreen extends StatelessWidget {
     required this.pdfUrl,
     required this.summary,
   });
+
+  @override
+  _NoteDetailScreenState createState() => _NoteDetailScreenState();
+}
+
+class _NoteDetailScreenState extends State<NoteDetailScreen> {
+  String? _localPath;
+  bool _isLoading = true;
+  String _loadingMessage = "Initializing...";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFile();
+  }
+
+  Future<void> _loadFile() async {
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = "Checking storage...";
+    });
+
+    try {
+      // Create a unique filename based on the URL
+      final fileName =
+          md5.convert(utf8.encode(widget.pdfUrl)).toString() + ".pdf";
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$fileName');
+
+      if (await file.exists()) {
+        if (mounted) {
+          setState(() {
+            _localPath = file.path;
+            _isLoading = false;
+          });
+        }
+      } else {
+        await _downloadFile(file);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = "Error: $e";
+        });
+      }
+    }
+  }
+
+  Future<void> _downloadFile(File file) async {
+    setState(() => _loadingMessage = "Downloading Note... (This happens once)");
+
+    try {
+      final response = await http.get(Uri.parse(widget.pdfUrl));
+      if (response.statusCode == 200) {
+        await file.writeAsBytes(response.bodyBytes);
+        if (mounted) {
+          setState(() {
+            _localPath = file.path;
+            _isLoading = false;
+          });
+        }
+      } else {
+        throw Exception("Failed to download PDF");
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = "Download Failed. Please check internet.";
+        });
+      }
+    }
+  }
 
   Future<void> _generateAIQuiz(BuildContext context) async {
     // Show Loading
@@ -29,7 +106,7 @@ class NoteDetailScreen extends StatelessWidget {
         Uri.parse('https://api-gemini-notes.onrender.com/generate-quiz'),
         headers: {'Content-Type': 'application/json'},
         // Send the summary text instead of the URL
-        body: json.encode({'text': summary}),
+        body: json.encode({'text': widget.summary}),
       );
 
       Navigator.pop(context); // Close loading
@@ -56,10 +133,26 @@ class NoteDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), backgroundColor: Colors.teal),
+      appBar: AppBar(title: Text(widget.title), backgroundColor: Colors.teal),
       body: Column(
         children: [
-          Expanded(flex: 3, child: SfPdfViewer.network(pdfUrl)),
+          Expanded(
+            flex: 3,
+            child: _isLoading
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Colors.teal),
+                        SizedBox(height: 10),
+                        Text(_loadingMessage),
+                      ],
+                    ),
+                  )
+                : (_localPath != null
+                      ? SfPdfViewer.file(File(_localPath!))
+                      : Center(child: Text("Unable to load PDF"))),
+          ),
           Expanded(
             flex: 2,
             child: Container(
@@ -97,7 +190,7 @@ class NoteDetailScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ParticipatoryStudyScreen(
-                                noteSummary: summary,
+                                noteSummary: widget.summary,
                               ),
                             ),
                           );
@@ -112,7 +205,9 @@ class NoteDetailScreen extends StatelessWidget {
                     ],
                   ),
                   Divider(),
-                  Expanded(child: SingleChildScrollView(child: Text(summary))),
+                  Expanded(
+                    child: SingleChildScrollView(child: Text(widget.summary)),
+                  ),
                 ],
               ),
             ),
