@@ -21,15 +21,33 @@ class NoteDetailScreen extends StatefulWidget {
   _NoteDetailScreenState createState() => _NoteDetailScreenState();
 }
 
-class _NoteDetailScreenState extends State<NoteDetailScreen> {
+class _NoteDetailScreenState extends State<NoteDetailScreen>
+    with SingleTickerProviderStateMixin {
   String? _localPath;
   bool _isLoading = true;
   String _loadingMessage = "Initializing...";
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _loadFile();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFile() async {
@@ -66,7 +84,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   }
 
   Future<void> _downloadFile(File file) async {
-    setState(() => _loadingMessage = "Downloading Note... (This happens once)");
+    setState(() => _loadingMessage = "Downloading Note...\nAlmost there!");
 
     try {
       final response = await http.get(Uri.parse(widget.pdfUrl));
@@ -141,11 +159,43 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             child: _isLoading
                 ? Center(
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(color: Colors.teal),
-                        SizedBox(height: 10),
-                        Text(_loadingMessage),
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.teal.withOpacity(0.1),
+                            ),
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              size: 60,
+                              color: Colors.teal,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          _loadingMessage,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        SizedBox(
+                          width: 150,
+                          child: LinearProgressIndicator(
+                            backgroundColor: Colors.teal.withOpacity(0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.teal,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   )
