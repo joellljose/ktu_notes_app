@@ -88,6 +88,84 @@ def generate_quiz():
         print(f"CRITICAL ERROR: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/participatory-start', methods=['POST'])
+def participatory_start():
+    try:
+        data = request.get_json()
+        input_text = data.get('text', '')
+        
+        # Initialize Model
+        model = genai.GenerativeModel(model_name=MODEL_NAME)
+        
+        prompt = f"""
+        You are a Participatory Learning Facilitator for KTU Engineering students. Your goal is not just to test them, but to make them co-creators of their knowledge.
+        
+        Source Material: {input_text[:10000]}
+        
+        Task:
+        1. Concept Challenge: Briefly explain a complex concept from the text but leave out a key technical detail. Ask the student to identify and explain that missing part.
+        2. Question Design: Ask the student to write one 'tricky' multiple-choice question about a specific topic from the text.
+        
+        Output Format:
+        Return ONLY a JSON object (no markdown) with:
+        {{
+            "facilitator_intro": "A warm, encouraging opening",
+            "challenge": "The concept with the missing detail",
+            "creation_task": "The specific instruction for them to design a question"
+        }}
+        """
+        
+        response = model.generate_content(prompt)
+        clean_json = re.sub(r'```json|```', '', response.text).strip()
+        return jsonify(json.loads(clean_json))
+
+    except Exception as e:
+        print(f"Participatory Start Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/participatory-evaluate', methods=['POST'])
+def participatory_evaluate():
+    try:
+        data = request.get_json()
+        original_text = data.get('text', '')
+        student_answer = data.get('answer', '')
+        student_question = data.get('question', '')
+        challenge_context = data.get('challenge', '')
+
+        # Initialize Model
+        model = genai.GenerativeModel(model_name=MODEL_NAME)
+
+        prompt = f"""
+        Act as a Participatory Learning Facilitator.
+        
+        Original Text Context: {original_text[:5000]}
+        Previous Challenge: {challenge_context}
+        
+        Student's Answer to Challenge: {student_answer}
+        Student's Created Question: {student_question}
+        
+        Task:
+        1. Evaluate the student's answer to the missing concept challenge. Was it correct?
+        2. Analyze the student's created question (Peer Assessment Simulation). Is it 'University Level'? Explain why.
+        3. If there are errors, guide them.
+        
+        Output Format:
+        Return ONLY a JSON object (no markdown) with:
+        {{
+            "concept_feedback": "Feedback on their answer to the missing detail",
+            "question_critique": "Analysis of their created question (is it tricky enough?)",
+            "overall_score": "A score out of 10 for their participation"
+        }}
+        """
+        
+        response = model.generate_content(prompt)
+        clean_json = re.sub(r'```json|```', '', response.text).strip()
+        return jsonify(json.loads(clean_json))
+
+    except Exception as e:
+        print(f"Participatory Eval Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Listen on 0.0.0.0 so your phone/emulator can see the PC
     app.run(host='0.0.0.0', port=5000, debug=True)

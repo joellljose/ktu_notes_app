@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'quiz_screen.dart';
+import 'participatory_study_screen.dart';
 
 class NoteDetailScreen extends StatelessWidget {
   final String title, pdfUrl, summary;
@@ -75,12 +76,36 @@ class NoteDetailScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
                       ElevatedButton.icon(
                         onPressed: () => _generateAIQuiz(context),
                         icon: Icon(Icons.psychology),
-                        label: Text("Start AI Quiz"),
+                        label: Text("Quiz"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ParticipatoryStudyScreen(
+                                noteSummary: summary,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.group_work),
+                        label: Text("Co-Study"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
                           foregroundColor: Colors.white,
                         ),
                       ),
