@@ -1,14 +1,13 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'no_internet_screen.dart';
 import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Manually providing options to fix the PlatformException
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: "AIzaSyCvYF6pEvsXkCaJFLOqWoAU1W-F6-X_wfQ",
@@ -22,7 +21,6 @@ void main() async {
   runApp(KTUNotesApp());
 }
 
-// Update this part in your main.dart
 class KTUNotesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -32,7 +30,21 @@ class KTUNotesApp extends StatelessWidget {
         textTheme: GoogleFonts.poppinsTextTheme(),
         primarySwatch: Colors.teal,
       ),
-      home: SplashScreen(), // Changed this line
+      builder: (context, child) {
+        return StreamBuilder<List<ConnectivityResult>>(
+          stream: Connectivity().onConnectivityChanged,
+          builder: (context, snapshot) {
+            final connectivityResult = snapshot.data;
+            if (connectivityResult != null &&
+                (connectivityResult.contains(ConnectivityResult.none) ||
+                    connectivityResult.isEmpty)) {
+              return NoInternetScreen();
+            }
+            return child ?? SizedBox();
+          },
+        );
+      },
+      home: SplashScreen(),
     );
   }
 }
