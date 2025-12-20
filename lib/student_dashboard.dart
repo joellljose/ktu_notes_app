@@ -50,12 +50,12 @@ class StudentDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: FutureBuilder<DocumentSnapshot>(
+      body: StreamBuilder<DocumentSnapshot>(
         // Fetch User profile to get their specific Branch and Semester
-        future: FirebaseFirestore.instance
+        stream: FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .get(),
+            .snapshots(),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
