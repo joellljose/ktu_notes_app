@@ -46,11 +46,12 @@ class KTUNotesApp extends StatelessWidget {
           },
         );
       },
+      initialRoute: '/',
       routes: {
+        '/': (context) => SplashScreen(),
         '/admin/login': (context) => AdminLoginScreen(),
         '/admin/dashboard': (context) => AdminDashboardScreen(),
       },
-      home: SplashScreen(),
     );
   }
 }
