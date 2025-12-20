@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'no_internet_screen.dart';
 import 'splash_screen.dart';
+import 'admin/admin_login_screen.dart';
+import 'admin/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,10 @@ class KTUNotesApp extends StatelessWidget {
             return child ?? SizedBox();
           },
         );
+      },
+      routes: {
+        '/admin/login': (context) => AdminLoginScreen(),
+        '/admin/dashboard': (context) => AdminDashboardScreen(),
       },
       home: SplashScreen(),
     );
