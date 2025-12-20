@@ -23,7 +23,6 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     # Fallback to a warning or error if not found (e.g. in production if not set)
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
-
 genai.configure(api_key=API_KEY)
 
 # Use a consistent model
