@@ -2,126 +2,294 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
-class DashboardView extends StatefulWidget {
-  @override
-  _DashboardViewState createState() => _DashboardViewState();
-}
-
-class _DashboardViewState extends State<DashboardView> {
-  int totalUsers = 0;
-  int totalNotes = 0;
-  Map<String, int> branchDistribution = {};
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchStats();
-  }
-
-  Future<void> _fetchStats() async {
-    try {
-      // 1. Count Users
-      AggregateQuerySnapshot userSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .count()
-          .get();
-      totalUsers = userSnapshot.count ?? 0;
-
-      // 2. Count Notes & Distribution
-      QuerySnapshot notesSnapshot = await FirebaseFirestore.instance
-          .collection('notes')
-          .get(); // Note: Reads all docs. Optimize later if needed.
-
-      totalNotes = notesSnapshot.docs.length;
-
-      branchDistribution = {};
-      for (var doc in notesSnapshot.docs) {
-        String branch =
-            (doc.data() as Map<String, dynamic>)['branch'] ?? 'Unknown';
-        branchDistribution[branch] = (branchDistribution[branch] ?? 0) + 1;
-      }
-    } catch (e) {
-      print("Error fetching stats: $e");
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
+class DashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (isLoading) return Center(child: CircularProgressIndicator());
-
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('notes')
+            .orderBy('uploadedAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return Text("Error: ${snapshot.error}");
+          if (!snapshot.hasData)
+            return Center(child: CircularProgressIndicator());
+
+          var docs = snapshot.data!.docs;
+          int totalNotes = docs.length;
+
+          // Calculate Branch Distribution
+          Map<String, int> branchDist = {};
+          for (var doc in docs) {
+            var data = doc.data() as Map<String, dynamic>;
+            String b = data['branch'] ?? 'Unknown';
+            branchDist[b] = (branchDist[b] ?? 0) + 1;
+          }
+
+          // Calculate Activity (Notes per Day for last 7 entries or simulated)
+          // For a "movement" feel, we'll plot the indices of recent uploads or time gaps
+          // A real production app would aggregate this server-side or cleaner.
+          // Here we plot "Number of uploads per day" for the available data.
+          Map<String, int> activityMap = {};
+          for (var doc in docs) {
+            // Assuming uploadedAt exists, if not use current time as fallback for display (mock)
+            // In real app, ensure 'uploadedAt' is set.
+            // We will check if field exists.
+            var data = doc.data() as Map<String, dynamic>;
+            if (data['uploadedAt'] != null) {
+              DateTime date = (data['uploadedAt'] as Timestamp).toDate();
+              String key = DateFormat('MM-dd').format(date);
+              activityMap[key] = (activityMap[key] ?? 0) + 1;
+            }
+          }
+
+          // Sort activity for chart
+          var sortedKeys = activityMap.keys.toList()..sort();
+          // Take last 7 days
+          if (sortedKeys.length > 7)
+            sortedKeys = sortedKeys.sublist(sortedKeys.length - 7);
+
+          List<FlSpot> spots = [];
+          for (int i = 0; i < sortedKeys.length; i++) {
+            spots.add(
+              FlSpot(i.toDouble(), activityMap[sortedKeys[i]]!.toDouble()),
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Live Overview",
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // 1. TOP ROW: Counters
+              Row(
+                children: [
+                  // For Users, we still use a FutureBuilder or separate stream if needed.
+                  // For simplicity, we'll wrap a separate User Stream here or just use a placeholder
+                  // that updates periodically. Let's do a simple Stream for users too.
+                  Expanded(child: _UserCounterCard()),
+                  SizedBox(width: 20),
+                  _buildStatCard(
+                    "Live Notes",
+                    totalNotes.toString(),
+                    Icons.library_books,
+                    Colors.green,
+                  ),
+                  SizedBox(width: 20),
+                  _buildStatCard(
+                    "Active Branches",
+                    branchDist.keys.length.toString(),
+                    Icons.category,
+                    Colors.orange,
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+
+              // 2. MIDDLE ROW: Charts
+              Container(
+                height: 300,
+                child: Row(
+                  children: [
+                    // Activity Chart
+                    Expanded(
+                      flex: 2,
+                      child: _buildChartContainer(
+                        "Upload Activity (Last 7 Days)",
+                        LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 30,
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (val, meta) {
+                                    int index = val.toInt();
+                                    if (index >= 0 &&
+                                        index < sortedKeys.length) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 8.0,
+                                        ),
+                                        child: Text(
+                                          sortedKeys[index],
+                                          style: TextStyle(fontSize: 10),
+                                        ),
+                                      );
+                                    }
+                                    return Text('');
+                                  },
+                                ),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(color: Colors.black12),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: spots.isEmpty ? [FlSpot(0, 0)] : spots,
+                                isCurved: true,
+                                color: Colors.blueAccent,
+                                barWidth: 3,
+                                dotData: FlDotData(show: true),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: Colors.blueAccent.withOpacity(0.1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 20),
+                    // Pie Chart
+                    Expanded(
+                      flex: 1,
+                      child: _buildChartContainer(
+                        "Branch Distribution",
+                        PieChart(
+                          PieChartData(
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 30,
+                            sections: _generatePieSections(branchDist),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 30),
+
+              // 3. BOTTOM ROW: Live Terminal
+              Text(
+                "System Terminal /// Live Feed",
+                style: GoogleFonts.firaCode(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                height: 200,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1E1E2C), // Terminal Black
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ListView.builder(
+                  itemCount: docs.length > 20
+                      ? 20
+                      : docs.length, // Show last 20 logs
+                  itemBuilder: (context, index) {
+                    var data = docs[index].data() as Map<String, dynamic>;
+                    String subject = data['subject'] ?? 'Unknown Subject';
+                    String branch = data['branch'] ?? 'Unknown Branch';
+                    // Attempt to format time
+                    String timeStr = "Just now";
+                    if (data['uploadedAt'] != null) {
+                      timeStr = DateFormat(
+                        'HH:mm:ss',
+                      ).format((data['uploadedAt'] as Timestamp).toDate());
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Text(
+                            "[$timeStr] ",
+                            style: GoogleFonts.firaCode(
+                              color: Colors.greenAccent,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            "UPLOAD: ",
+                            style: GoogleFonts.firaCode(
+                              color: Colors.yellowAccent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              "$subject to $branch",
+                              style: GoogleFonts.firaCode(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChartContainer(String title, Widget chart) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Dashboard Overview",
-            style: GoogleFonts.poppins(
-              fontSize: 24,
+            title,
+            style: TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Colors.grey[700],
             ),
           ),
-          SizedBox(height: 20),
-
-          // Stats Cards
-          Row(
-            children: [
-              _buildStatCard(
-                "Total Students",
-                totalUsers.toString(),
-                Icons.people,
-                Colors.blue,
-              ),
-              SizedBox(width: 20),
-              _buildStatCard(
-                "Total Notes",
-                totalNotes.toString(),
-                Icons.library_books,
-                Colors.green,
-              ),
-              SizedBox(width: 20),
-              _buildStatCard(
-                "Active Semesters",
-                "8",
-                Icons.school,
-                Colors.orange,
-              ),
-            ],
-          ),
-          SizedBox(height: 40),
-
-          // Charts
-          Text(
-            "Notes Distribution by Branch",
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 1.3,
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 0,
-                        centerSpaceRadius: 40,
-                        sections: _generatePieSections(),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(child: _buildLegend()),
-              ],
-            ),
-          ),
+          SizedBox(height: 15),
+          Expanded(child: chart),
         ],
       ),
     );
@@ -135,7 +303,8 @@ class _DashboardViewState extends State<DashboardView> {
   ) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(20),
+        height: 100,
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -143,22 +312,19 @@ class _DashboardViewState extends State<DashboardView> {
         ),
         child: Row(
           children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 30),
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.1),
+              child: Icon(icon, color: color),
             ),
             SizedBox(width: 15),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: TextStyle(color: Colors.grey, fontSize: 14)),
+                Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
                 Text(
                   value,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ],
             ),
@@ -168,7 +334,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  List<PieChartSectionData> _generatePieSections() {
+  List<PieChartSectionData> _generatePieSections(Map<String, int> branchDist) {
     List<Color> colors = [
       Colors.blue,
       Colors.red,
@@ -179,53 +345,66 @@ class _DashboardViewState extends State<DashboardView> {
     ];
     int index = 0;
 
-    return branchDistribution.entries.map((entry) {
-      final isLarge = index == 0; // Highlight first
+    return branchDist.entries.map((entry) {
       final color = colors[index % colors.length];
       index++;
-
       return PieChartSectionData(
         color: color,
         value: entry.value.toDouble(),
-        title: '${entry.value}',
-        radius: isLarge ? 60 : 50,
+        title: '${entry.key}\n${entry.value}',
+        radius: 50,
         titleStyle: TextStyle(
-          fontSize: 14,
+          fontSize: 10,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       );
     }).toList();
   }
+}
 
-  Widget _buildLegend() {
-    List<Color> colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.yellow,
-      Colors.purple,
-      Colors.cyan,
-    ];
-    int index = 0;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: branchDistribution.entries.map((entry) {
-        final color = colors[index % colors.length];
-        index++;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+class _UserCounterCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      builder: (context, snapshot) {
+        String count = snapshot.hasData
+            ? snapshot.data!.docs.length.toString()
+            : "...";
+        return Container(
+          height: 100,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
           child: Row(
             children: [
-              Container(width: 16, height: 16, color: color),
-              SizedBox(width: 8),
-              Text("${entry.key}: ${entry.value} notes"),
+              CircleAvatar(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                child: Icon(Icons.people, color: Colors.blue),
+              ),
+              SizedBox(width: 15),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Total Students",
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    count,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                ],
+              ),
             ],
           ),
         );
-      }).toList(),
+      },
     );
   }
 }
