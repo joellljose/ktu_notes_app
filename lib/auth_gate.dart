@@ -32,11 +32,7 @@ class AuthGate extends StatelessWidget {
               if (userSnapshot.hasData && userSnapshot.data!.exists) {
                 var userData =
                     userSnapshot.data!.data() as Map<String, dynamic>;
-                print("DEBUG: User ID: ${snapshot.data!.uid}");
-                print("DEBUG: Full Protocol Data: $userData");
-
                 String role = userData['role'] ?? 'student';
-                print("DEBUG: Fetched Role: $role");
 
                 if (role == 'admin') {
                   return AdminDashboardScreen();
@@ -44,9 +40,9 @@ class AuthGate extends StatelessWidget {
                   return StudentDashboard();
                 }
               } else {
-                print(
-                  "DEBUG: User document does not exist for ID: ${snapshot.data!.uid}",
-                );
+                // Handle missing user doc gracefully, perhaps logout or show error
+                // For now, default to student view which might just work or show empty
+                return StudentDashboard();
               }
 
               // Default fallback if user doc missing (new user?) -> Student
