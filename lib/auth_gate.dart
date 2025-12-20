@@ -32,13 +32,21 @@ class AuthGate extends StatelessWidget {
               if (userSnapshot.hasData && userSnapshot.data!.exists) {
                 var userData =
                     userSnapshot.data!.data() as Map<String, dynamic>;
+                print("DEBUG: User ID: ${snapshot.data!.uid}");
+                print("DEBUG: Full Protocol Data: $userData");
+
                 String role = userData['role'] ?? 'student';
+                print("DEBUG: Fetched Role: $role");
 
                 if (role == 'admin') {
                   return AdminDashboardScreen();
                 } else {
                   return StudentDashboard();
                 }
+              } else {
+                print(
+                  "DEBUG: User document does not exist for ID: ${snapshot.data!.uid}",
+                );
               }
 
               // Default fallback if user doc missing (new user?) -> Student
