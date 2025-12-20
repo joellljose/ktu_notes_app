@@ -7,6 +7,8 @@ import 'splash_screen.dart';
 
 import 'admin/admin_dashboard_screen.dart';
 
+import 'services/user_activity_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -20,37 +22,42 @@ void main() async {
     ),
   );
 
+  UserActivityService().init();
+
   runApp(KTUNotesApp());
 }
 
 class KTUNotesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        primarySwatch: Colors.teal,
+    return Listener(
+      onPointerDown: (_) => UserActivityService().logClick(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          textTheme: GoogleFonts.poppinsTextTheme(),
+          primarySwatch: Colors.teal,
+        ),
+        builder: (context, child) {
+          return StreamBuilder<List<ConnectivityResult>>(
+            stream: Connectivity().onConnectivityChanged,
+            builder: (context, snapshot) {
+              final connectivityResult = snapshot.data;
+              if (connectivityResult != null &&
+                  (connectivityResult.contains(ConnectivityResult.none) ||
+                      connectivityResult.isEmpty)) {
+                return NoInternetScreen();
+              }
+              return child ?? SizedBox();
+            },
+          );
+        },
+        initialRoute: '/',
+        routes: {
+          '/': (context) => SplashScreen(),
+          '/admin/dashboard': (context) => AdminDashboardScreen(),
+        },
       ),
-      builder: (context, child) {
-        return StreamBuilder<List<ConnectivityResult>>(
-          stream: Connectivity().onConnectivityChanged,
-          builder: (context, snapshot) {
-            final connectivityResult = snapshot.data;
-            if (connectivityResult != null &&
-                (connectivityResult.contains(ConnectivityResult.none) ||
-                    connectivityResult.isEmpty)) {
-              return NoInternetScreen();
-            }
-            return child ?? SizedBox();
-          },
-        );
-      },
-      initialRoute: '/',
-      routes: {
-        '/': (context) => SplashScreen(),
-        '/admin/dashboard': (context) => AdminDashboardScreen(),
-      },
     );
   }
 }

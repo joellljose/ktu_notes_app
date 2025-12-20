@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dashboard_view.dart';
 import 'notes_manager_view.dart';
-import '../login_screen.dart'; // Import LoginScreen for navigation after logout
 
 class AdminDashboardScreen extends StatefulWidget {
   @override
@@ -117,9 +116,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     await FirebaseAuth.instance.signOut();
     // After logout, AuthGate will handle showing LoginScreen,
     // but explicit navigation helps clear state if needed.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-      (route) => false,
-    );
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }

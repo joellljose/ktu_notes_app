@@ -641,6 +641,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       'module': selectedModule,
                       'summary': _summaryController.text.trim(),
                       'createdAt': Timestamp.now(),
+                      'uploadedAt':
+                          Timestamp.now(), // Added for Admin Panel compatibility
                     });
 
                     ScaffoldMessenger.of(context).showSnackBar(

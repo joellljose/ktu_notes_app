@@ -60,209 +60,334 @@ class DashboardView extends StatelessWidget {
             );
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Live Overview",
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 20),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              bool isMobile = constraints.maxWidth < 800;
 
-              // 1. TOP ROW: Counters
-              Row(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // For Users, we still use a FutureBuilder or separate stream if needed.
-                  // For simplicity, we'll wrap a separate User Stream here or just use a placeholder
-                  // that updates periodically. Let's do a simple Stream for users too.
-                  Expanded(child: _UserCounterCard()),
-                  SizedBox(width: 20),
-                  _buildStatCard(
-                    "Live Notes",
-                    totalNotes.toString(),
-                    Icons.library_books,
-                    Colors.green,
+                  Text(
+                    "Live Overview",
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(width: 20),
-                  _buildStatCard(
-                    "Active Branches",
-                    branchDist.keys.length.toString(),
-                    Icons.category,
-                    Colors.orange,
-                  ),
-                ],
-              ),
-              SizedBox(height: 30),
+                  SizedBox(height: 20),
 
-              // 2. MIDDLE ROW: Charts
-              Container(
-                height: 300,
-                child: Row(
-                  children: [
-                    // Activity Chart
-                    Expanded(
-                      flex: 2,
-                      child: _buildChartContainer(
-                        "Upload Activity (Last 7 Days)",
-                        LineChart(
-                          LineChartData(
-                            gridData: FlGridData(show: false),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
+                  // 1. TOP SECTION: Counters
+                  if (isMobile)
+                    Column(
+                      children: [
+                        Container(height: 100, child: _UserCounterCard()),
+                        SizedBox(height: 15),
+                        Container(height: 100, child: _OnlineUserCounterCard()),
+                        SizedBox(height: 15),
+                        Container(height: 100, child: _ClickCounterCard()),
+                        SizedBox(height: 15),
+                        Container(
+                          height: 100,
+                          child: _buildStatCard(
+                            "Live Notes",
+                            totalNotes.toString(),
+                            Icons.library_books,
+                            Colors.green,
+                          ),
+                        ),
+                        SizedBox(height: 15),
+                        Container(
+                          height: 100,
+                          child: _buildStatCard(
+                            "Active Branches",
+                            branchDist.keys.length.toString(),
+                            Icons.category,
+                            Colors.orange,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(child: _UserCounterCard()),
+                        SizedBox(width: 20),
+                        Expanded(child: _OnlineUserCounterCard()),
+                        SizedBox(width: 20),
+                        Expanded(child: _ClickCounterCard()),
+                        SizedBox(width: 20),
+                        _buildStatCard(
+                          "Live Notes",
+                          totalNotes.toString(),
+                          Icons.library_books,
+                          Colors.green,
+                        ),
+                        SizedBox(width: 20),
+                        _buildStatCard(
+                          "Active Branches",
+                          branchDist.keys.length.toString(),
+                          Icons.category,
+                          Colors.orange,
+                        ),
+                      ],
+                    ),
+                  SizedBox(height: 30),
+
+                  // 2. MIDDLE SECTION: Charts
+                  if (isMobile)
+                    Column(
+                      children: [
+                        Container(
+                          height: 300,
+                          child: _buildChartContainer(
+                            "Upload Activity (Last 7 Days)",
+                            LineChart(
+                              LineChartData(
+                                gridData: FlGridData(show: false),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30,
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (val, meta) {
+                                        int index = val.toInt();
+                                        if (index >= 0 &&
+                                            index < sortedKeys.length) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 8.0,
+                                            ),
+                                            child: Text(
+                                              sortedKeys[index],
+                                              style: TextStyle(fontSize: 10),
+                                            ),
+                                          );
+                                        }
+                                        return Text('');
+                                      },
+                                    ),
+                                  ),
+                                  topTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
                                 ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (val, meta) {
-                                    int index = val.toInt();
-                                    if (index >= 0 &&
-                                        index < sortedKeys.length) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: 8.0,
-                                        ),
-                                        child: Text(
-                                          sortedKeys[index],
-                                          style: TextStyle(fontSize: 10),
-                                        ),
-                                      );
-                                    }
-                                    return Text('');
-                                  },
-                                ),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                            ),
-                            borderData: FlBorderData(
-                              show: true,
-                              border: Border.all(color: Colors.black12),
-                            ),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: spots.isEmpty ? [FlSpot(0, 0)] : spots,
-                                isCurved: true,
-                                color: Colors.blueAccent,
-                                barWidth: 3,
-                                dotData: FlDotData(show: true),
-                                belowBarData: BarAreaData(
+                                borderData: FlBorderData(
                                   show: true,
-                                  color: Colors.blueAccent.withOpacity(0.1),
+                                  border: Border.all(color: Colors.black12),
                                 ),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: spots.isEmpty
+                                        ? [FlSpot(0, 0)]
+                                        : spots,
+                                    isCurved: true,
+                                    color: Colors.blueAccent,
+                                    barWidth: 3,
+                                    dotData: FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: Colors.blueAccent.withOpacity(0.1),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    SizedBox(width: 20),
-                    // Pie Chart
-                    Expanded(
-                      flex: 1,
-                      child: _buildChartContainer(
-                        "Branch Distribution",
-                        PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 30,
-                            sections: _generatePieSections(branchDist),
+                        SizedBox(height: 20),
+                        Container(
+                          height: 300,
+                          child: _buildChartContainer(
+                            "Branch Distribution",
+                            PieChart(
+                              PieChartData(
+                                sectionsSpace: 2,
+                                centerSpaceRadius: 30,
+                                sections: _generatePieSections(branchDist),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 30),
-
-              // 3. BOTTOM ROW: Live Terminal
-              Text(
-                "System Terminal /// Live Feed",
-                style: GoogleFonts.firaCode(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                height: 200,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Color(0xFF1E1E2C), // Terminal Black
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  itemCount: docs.length > 20
-                      ? 20
-                      : docs.length, // Show last 20 logs
-                  itemBuilder: (context, index) {
-                    var data = docs[index].data() as Map<String, dynamic>;
-                    String subject = data['subject'] ?? 'Unknown Subject';
-                    String branch = data['branch'] ?? 'Unknown Branch';
-                    // Attempt to format time
-                    String timeStr = "Just now";
-                    if (data['uploadedAt'] != null) {
-                      timeStr = DateFormat(
-                        'HH:mm:ss',
-                      ).format((data['uploadedAt'] as Timestamp).toDate());
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      ],
+                    )
+                  else
+                    Container(
+                      height: 300,
                       child: Row(
                         children: [
-                          Text(
-                            "[$timeStr] ",
-                            style: GoogleFonts.firaCode(
-                              color: Colors.greenAccent,
-                              fontSize: 13,
-                            ),
-                          ),
-                          Text(
-                            "UPLOAD: ",
-                            style: GoogleFonts.firaCode(
-                              color: Colors.yellowAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                           Expanded(
-                            child: Text(
-                              "$subject to $branch",
-                              style: GoogleFonts.firaCode(
-                                color: Colors.white70,
-                                fontSize: 13,
+                            flex: 2,
+                            child: _buildChartContainer(
+                              "Upload Activity (Last 7 Days)",
+                              LineChart(
+                                LineChartData(
+                                  gridData: FlGridData(show: false),
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 30,
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (val, meta) {
+                                          int index = val.toInt();
+                                          if (index >= 0 &&
+                                              index < sortedKeys.length) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 8.0,
+                                              ),
+                                              child: Text(
+                                                sortedKeys[index],
+                                                style: TextStyle(fontSize: 10),
+                                              ),
+                                            );
+                                          }
+                                          return Text('');
+                                        },
+                                      ),
+                                    ),
+                                    topTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    rightTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: true,
+                                    border: Border.all(color: Colors.black12),
+                                  ),
+                                  lineBarsData: [
+                                    LineChartBarData(
+                                      spots: spots.isEmpty
+                                          ? [FlSpot(0, 0)]
+                                          : spots,
+                                      isCurved: true,
+                                      color: Colors.blueAccent,
+                                      barWidth: 3,
+                                      dotData: FlDotData(show: true),
+                                      belowBarData: BarAreaData(
+                                        show: true,
+                                        color: Colors.blueAccent.withOpacity(
+                                          0.1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(width: 20),
+                          Expanded(
+                            flex: 1,
+                            child: _buildChartContainer(
+                              "Branch Distribution",
+                              PieChart(
+                                PieChartData(
+                                  sectionsSpace: 2,
+                                  centerSpaceRadius: 30,
+                                  sections: _generatePieSections(branchDist),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
+                    ),
+                  SizedBox(height: 30),
+
+                  // 3. BOTTOM ROW: Live Terminal
+                  Text(
+                    "System Terminal /// Live Feed",
+                    style: GoogleFonts.firaCode(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    height: 200,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF1E1E2C), // Terminal Black
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ListView.builder(
+                      itemCount: docs.length > 20
+                          ? 20
+                          : docs.length, // Show last 20 logs
+                      itemBuilder: (context, index) {
+                        var data = docs[index].data() as Map<String, dynamic>;
+                        String subject = data['subject'] ?? 'Unknown Subject';
+                        String branch = data['branch'] ?? 'Unknown Branch';
+                        // Attempt to format time
+                        String timeStr = "Just now";
+                        if (data['uploadedAt'] != null) {
+                          timeStr = DateFormat(
+                            'HH:mm:ss',
+                          ).format((data['uploadedAt'] as Timestamp).toDate());
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                "[$timeStr] ",
+                                style: GoogleFonts.firaCode(
+                                  color: Colors.greenAccent,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                "UPLOAD: ",
+                                style: GoogleFonts.firaCode(
+                                  color: Colors.yellowAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "$subject to $branch",
+                                  style: GoogleFonts.firaCode(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -317,16 +442,21 @@ class DashboardView extends StatelessWidget {
               child: Icon(icon, color: color),
             ),
             SizedBox(width: 15),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text(
-                  value,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -387,19 +517,144 @@ class _UserCounterCard extends StatelessWidget {
                 child: Icon(Icons.people, color: Colors.blue),
               ),
               SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Total Students",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  Text(
-                    count,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Total Students",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _OnlineUserCounterCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      builder: (context, snapshot) {
+        String count = "...";
+        if (snapshot.hasData) {
+          final now = DateTime.now();
+          final activeUsers = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            if (data['lastActive'] == null) return false;
+            final lastActive = (data['lastActive'] as Timestamp).toDate();
+            // Active within last 7 minutes
+            return now.difference(lastActive).inMinutes < 7;
+          }).length;
+          count = activeUsers.toString();
+        }
+
+        return Container(
+          height: 100,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.teal.withOpacity(0.1),
+                child: Icon(Icons.circle, color: Colors.teal, size: 14),
+              ),
+              SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Online Users",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ClickCounterCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('stats')
+          .doc('activity')
+          .snapshots(),
+      builder: (context, snapshot) {
+        String count = "...";
+        if (snapshot.hasData && snapshot.data!.exists) {
+          var data = snapshot.data!.data() as Map<String, dynamic>;
+          count = (data['totalClicks'] ?? 0).toString();
+        } else if (snapshot.hasData && !snapshot.data!.exists) {
+          count = "0";
+        }
+
+        return Container(
+          height: 100,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.purple.withOpacity(0.1),
+                child: Icon(Icons.touch_app, color: Colors.purple),
+              ),
+              SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Total Clicks",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

@@ -49,46 +49,111 @@ class _NotesManagerViewState extends State<NotesManagerView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Manage Notes",
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Row(
-                children: [
-                  DropdownButton<String>(
-                    hint: Text("Filter Branch"),
-                    value: selectedBranch,
-                    items: branches
-                        .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-                        .toList(),
-                    onChanged: (val) => setState(() => selectedBranch = val),
-                  ),
-                  SizedBox(width: 15),
-                  DropdownButton<String>(
-                    hint: Text("Filter Semester"),
-                    value: selectedSem,
-                    items: semesters
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (val) => setState(() => selectedSem = val),
-                  ),
-                  if (selectedBranch != null || selectedSem != null)
-                    IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () => setState(() {
-                        selectedBranch = null;
-                        selectedSem = null;
-                      }),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              bool isMobile = constraints.maxWidth < 800;
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Manage Notes",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                ],
-              ),
-            ],
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        DropdownButton<String>(
+                          hint: Text("Filter Branch"),
+                          value: selectedBranch,
+                          items: branches
+                              .map(
+                                (b) =>
+                                    DropdownMenuItem(value: b, child: Text(b)),
+                              )
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => selectedBranch = val),
+                        ),
+                        DropdownButton<String>(
+                          hint: Text("Filter Semester"),
+                          value: selectedSem,
+                          items: semesters
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (val) => setState(() => selectedSem = val),
+                        ),
+                        if (selectedBranch != null || selectedSem != null)
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () => setState(() {
+                              selectedBranch = null;
+                              selectedSem = null;
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              } else {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Manage Notes",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        DropdownButton<String>(
+                          hint: Text("Filter Branch"),
+                          value: selectedBranch,
+                          items: branches
+                              .map(
+                                (b) =>
+                                    DropdownMenuItem(value: b, child: Text(b)),
+                              )
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => selectedBranch = val),
+                        ),
+                        SizedBox(width: 15),
+                        DropdownButton<String>(
+                          hint: Text("Filter Semester"),
+                          value: selectedSem,
+                          items: semesters
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (val) => setState(() => selectedSem = val),
+                        ),
+                        if (selectedBranch != null || selectedSem != null)
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () => setState(() {
+                              selectedBranch = null;
+                              selectedSem = null;
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+            },
           ),
           SizedBox(height: 20),
           Expanded(
@@ -154,6 +219,7 @@ class _NotesManagerViewState extends State<NotesManagerView> {
                             DataCell(Text(data['module'] ?? 'N/A')),
                             DataCell(
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                     icon: Icon(
