@@ -27,8 +27,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     String message = _messageController.text.trim();
     _messageController.clear();
 
-    // Document ID based on Branch and Sem
-    // Example: "Computer Science_S1"
+    
+    
     String chatId = "${widget.branch}_${widget.semester}";
 
     try {
@@ -43,10 +43,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             'timestamp': FieldValue.serverTimestamp(),
           });
 
-      // Auto scroll to bottom
+      
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          0.0, // Because we might use reverse: true for chat
+          0.0, 
           duration: Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -94,7 +94,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 }
 
                 return ListView.builder(
-                  reverse: true, // Chat style
+                  reverse: true, 
                   controller: _scrollController,
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
@@ -131,7 +131,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                               Text(
                                 (data['senderEmail'] as String).split(
                                   '@',
-                                )[0], // Show simplified name
+                                )[0], 
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: Colors.grey[600],

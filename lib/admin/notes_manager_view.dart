@@ -171,7 +171,7 @@ class _NotesManagerViewState extends State<NotesManagerView> {
                   return Center(child: Text("No notes uploaded yet."));
                 }
 
-                // Header
+                
                 return SingleChildScrollView(
                   scrollDirection: Axis.vertical,
                   child: SingleChildScrollView(

@@ -22,7 +22,7 @@ class DashboardView extends StatelessWidget {
           var docs = snapshot.data!.docs;
           int totalNotes = docs.length;
 
-          // Calculate Branch Distribution
+          
           Map<String, int> branchDist = {};
           for (var doc in docs) {
             var data = doc.data() as Map<String, dynamic>;
@@ -30,15 +30,15 @@ class DashboardView extends StatelessWidget {
             branchDist[b] = (branchDist[b] ?? 0) + 1;
           }
 
-          // Calculate Activity (Notes per Day for last 7 entries or simulated)
-          // For a "movement" feel, we'll plot the indices of recent uploads or time gaps
-          // A real production app would aggregate this server-side or cleaner.
-          // Here we plot "Number of uploads per day" for the available data.
+          
+          
+          
+          
           Map<String, int> activityMap = {};
           for (var doc in docs) {
-            // Assuming uploadedAt exists, if not use current time as fallback for display (mock)
-            // In real app, ensure 'uploadedAt' is set.
-            // We will check if field exists.
+            
+            
+            
             var data = doc.data() as Map<String, dynamic>;
             if (data['uploadedAt'] != null) {
               DateTime date = (data['uploadedAt'] as Timestamp).toDate();
@@ -47,9 +47,9 @@ class DashboardView extends StatelessWidget {
             }
           }
 
-          // Sort activity for chart
+          
           var sortedKeys = activityMap.keys.toList()..sort();
-          // Take last 7 days
+          
           if (sortedKeys.length > 7)
             sortedKeys = sortedKeys.sublist(sortedKeys.length - 7);
 
@@ -76,7 +76,7 @@ class DashboardView extends StatelessWidget {
                   ),
                   SizedBox(height: 20),
 
-                  // 1. TOP SECTION: Counters
+                  
                   if (isMobile)
                     Column(
                       children: [
@@ -133,7 +133,7 @@ class DashboardView extends StatelessWidget {
                     ),
                   SizedBox(height: 30),
 
-                  // 2. MIDDLE SECTION: Charts
+                  
                   if (isMobile)
                     Column(
                       children: [
@@ -309,7 +309,7 @@ class DashboardView extends StatelessWidget {
                     ),
                   SizedBox(height: 30),
 
-                  // 3. BOTTOM ROW: Live Terminal
+                  
                   Text(
                     "System Terminal /// Live Feed",
                     style: GoogleFonts.firaCode(
@@ -324,7 +324,7 @@ class DashboardView extends StatelessWidget {
                     height: 200,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFF1E1E2C), // Terminal Black
+                      color: Color(0xFF1E1E2C), 
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -337,12 +337,12 @@ class DashboardView extends StatelessWidget {
                     child: ListView.builder(
                       itemCount: docs.length > 20
                           ? 20
-                          : docs.length, // Show last 20 logs
+                          : docs.length, 
                       itemBuilder: (context, index) {
                         var data = docs[index].data() as Map<String, dynamic>;
                         String subject = data['subject'] ?? 'Unknown Subject';
                         String branch = data['branch'] ?? 'Unknown Branch';
-                        // Attempt to format time
+                        
                         String timeStr = "Just now";
                         if (data['uploadedAt'] != null) {
                           timeStr = DateFormat(
@@ -557,7 +557,7 @@ class _OnlineUserCounterCard extends StatelessWidget {
             final data = doc.data() as Map<String, dynamic>;
             if (data['lastActive'] == null) return false;
             final lastActive = (data['lastActive'] as Timestamp).toDate();
-            // Active within last 7 minutes
+            
             return now.difference(lastActive).inMinutes < 7;
           }).length;
           count = activeUsers.toString();

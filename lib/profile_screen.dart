@@ -42,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           var userData = snapshot.data!.data() as Map<String, dynamic>;
 
-          // Initialize values if they are null
+          
           selectedBranch ??= userData['branch'];
           selectedSem ??= userData['semester'];
 
@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 30),
 
-                // Edit Branch
+                
                 DropdownButtonFormField(
                   value: selectedBranch,
                   decoration: InputDecoration(
@@ -77,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 20),
 
-                // Edit Semester
+                
                 DropdownButtonFormField(
                   value: selectedSem,
                   decoration: InputDecoration(
@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Profile Updated!")),
                           );
-                          Navigator.pop(context); // Go back after saving
+                          Navigator.pop(context); 
                         },
                   child: isSaving
                       ? CircularProgressIndicator(color: Colors.white)

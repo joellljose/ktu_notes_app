@@ -16,7 +16,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          // User is logged in, check their role
+          
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance
                 .collection('users')
@@ -40,18 +40,14 @@ class AuthGate extends StatelessWidget {
                   return StudentDashboard();
                 }
               } else {
-                // Handle missing user doc gracefully, perhaps logout or show error
-                // For now, default to student view which might just work or show empty
+                
                 return StudentDashboard();
               }
-
-              // Default fallback if user doc missing (new user?) -> Student
-              return StudentDashboard();
             },
           );
         }
 
-        // User not logged in
+        
         return LoginScreen();
       },
     );

@@ -30,20 +30,18 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Pulse Animation for the Logo
     _pulseController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Fade and Slide Animation for Text
     _fadeController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
     )..forward();
 
     _fadeAnimation = Tween<double>(
@@ -51,17 +49,16 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
 
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero)
-        .animate(
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
           CurvedAnimation(parent: _fadeController, curve: Curves.easeOutBack),
         );
 
-    // Navigation Timer
-    Timer(Duration(seconds: 4), () {
+    Timer(const Duration(seconds: 4), () {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          transitionDuration: Duration(milliseconds: 800),
+          transitionDuration: const Duration(milliseconds: 800),
           pageBuilder: (_, __, ___) => AuthGate(),
           transitionsBuilder: (_, animation, __, child) {
             return FadeTransition(opacity: animation, child: child);
@@ -83,25 +80,22 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Premium Gradient Background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF004D40), // Deep Teal
+                  Color(0xFF004D40),
                   Color(0xFF00695C),
-                  Color(0xFF26A69A), // Lighter Teal
+                  Color(0xFF26A69A),
                 ],
               ),
             ),
           ),
 
-          // 2. Animated Floating Particles
           ...List.generate(15, (index) => _buildFloatingParticle(index)),
 
-          // 3. Central Content
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -121,14 +115,14 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ],
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.menu_book_rounded,
                       size: 80,
                       color: Colors.white,
                     ),
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 SlideTransition(
                   position: _slideAnimation,
                   child: FadeTransition(
@@ -151,7 +145,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
                           "Learn Smarter, Not Harder",
                           style: GoogleFonts.poppins(
@@ -176,8 +170,8 @@ class _SplashScreenState extends State<SplashScreen>
     final random = Random(index);
     final size = 20.0 + random.nextInt(20);
     final icon = _floatingIcons[random.nextInt(_floatingIcons.length)];
-    final left = random.nextDouble() * 400; // Approximate screen width
-    final duration = 3 + random.nextInt(4); // 3-7 seconds
+    final left = random.nextDouble() * 400;
+    final duration = 3 + random.nextInt(4);
 
     return _FloatingParticle(
       icon: icon,

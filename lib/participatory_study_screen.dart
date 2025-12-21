@@ -14,20 +14,20 @@ class ParticipatoryStudyScreen extends StatefulWidget {
 }
 
 class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
-  // 0: Loading Start, 1: Challenge Active, 2: Loading Feedback, 3: Feedback Result
+  
   int _currentState = 0;
 
-  // Data from Start
+  
   String _intro = "";
   String _challenge = "";
   String _creationTask = "";
 
-  // Data from Feedback
+  
   String _conceptFeedback = "";
   String _questionCritique = "";
   String _score = "";
 
-  // User Inputs
+  
   final TextEditingController _answerController = TextEditingController();
   final TextEditingController _questionController = TextEditingController();
 
@@ -129,7 +129,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Facilitator Intro
+          
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -152,7 +152,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
           ),
           SizedBox(height: 20),
 
-          // Challenge Section
+          
           Text(
             "1. Concept Challenge",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -171,7 +171,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
 
           SizedBox(height: 30),
 
-          // Creation Task
+          
           Text(
             "2. Question Design Task",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -216,7 +216,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
         ),
       );
     } else {
-      // Feedback State
+      
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

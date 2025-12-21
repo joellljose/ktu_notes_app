@@ -4,7 +4,7 @@ from flask_cors import CORS
 import json
 import re
 import requests
-import fitz  # PyMuPDF
+import fitz  
 import os
 
 import os
@@ -13,19 +13,19 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 CORS(app)
 
-# Load environment variables from .env file (for local development)
+
 load_dotenv()
 
-# --- CONFIGURATION ---
-# Get API Key from Environment Variable (Safe for GitHub)
+
+
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not API_KEY:
-    # Fallback to a warning or error if not found (e.g. in production if not set)
+    
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
 genai.configure(api_key=API_KEY)
 
-# Use a consistent model
+
 MODEL_NAME = 'gemini-2.5-flash' 
 
 def extract_text_from_drive(url):
@@ -55,7 +55,7 @@ def generate_quiz():
         
         source_text = ""
 
-        # Determine source of text
+        
         if input_text and input_text.strip():
             print("Generating quiz from provided description/text...")
             source_text = input_text
@@ -68,7 +68,7 @@ def generate_quiz():
         if not source_text.strip():
              return jsonify({"error": "Extracted text is empty"}), 400
 
-        # Initialize Model
+        
         model = genai.GenerativeModel(model_name=MODEL_NAME)
         
         prompt = f"""
@@ -84,10 +84,10 @@ def generate_quiz():
         {source_text[:12000]}
         """
 
-        # Generate content
+        
         response = model.generate_content(prompt)
         
-        # Clean and Parse
+        
         clean_json = re.sub(r'```json|```', '', response.text).strip()
         quiz_data = json.loads(clean_json)
         
@@ -103,7 +103,7 @@ def participatory_start():
         data = request.get_json()
         input_text = data.get('text', '')
         
-        # Initialize Model
+        
         model = genai.GenerativeModel(model_name=MODEL_NAME)
         
         prompt = f"""
@@ -141,7 +141,7 @@ def participatory_evaluate():
         student_question = data.get('question', '')
         challenge_context = data.get('challenge', '')
 
-        # Initialize Model
+        
         model = genai.GenerativeModel(model_name=MODEL_NAME)
 
         prompt = f"""
@@ -176,5 +176,5 @@ def participatory_evaluate():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Listen on 0.0.0.0 so your phone/emulator can see the PC
+    
     app.run(host='0.0.0.0', port=5000, debug=True)

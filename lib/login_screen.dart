@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("KTU AI Notes"),
+        title: const Text("KTU AI Notes"),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.teal,
@@ -31,44 +31,41 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(height: 40),
-              Icon(Icons.auto_stories, size: 80, color: Colors.teal),
-              SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 40),
+              const Icon(Icons.auto_stories, size: 80, color: Colors.teal),
+              const SizedBox(height: 20),
+              const Text(
                 "Welcome Back",
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-              // Email Field
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email),
                 ),
                 validator: (val) =>
                     val!.isEmpty ? "Please enter your email" : null,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // Password Field
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Password",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
                 ),
                 validator: (val) =>
                     val!.length < 6 ? "Password must be 6+ chars" : null,
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-              // Login Button
               isLoading
                   ? CircularProgressIndicator()
                   : SizedBox(
@@ -107,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               SizedBox(height: 20),
 
-              // Navigation to Signup
               TextButton(
                 onPressed: () {
                   Navigator.push(

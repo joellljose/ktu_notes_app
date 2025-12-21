@@ -57,7 +57,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     });
 
     try {
-      // Create a unique filename based on the URL
+      
       final fileName =
           md5.convert(utf8.encode(widget.pdfUrl)).toString() + ".pdf";
       final dir = await getApplicationDocumentsDirectory();
@@ -110,7 +110,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
   }
 
   Future<void> _generateAIQuiz(BuildContext context) async {
-    // Show Loading
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -119,15 +119,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     );
 
     try {
-      // Production URL
+      
       final response = await http.post(
         Uri.parse('https://api-gemini-notes.onrender.com/generate-quiz'),
         headers: {'Content-Type': 'application/json'},
-        // Send the summary text instead of the URL
+        
         body: json.encode({'text': widget.summary}),
       );
 
-      Navigator.pop(context); // Close loading
+      Navigator.pop(context); 
 
       if (response.statusCode == 200) {
         List<dynamic> questions = json.decode(response.body);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class QuizScreen extends StatefulWidget {
-  final List<dynamic> questions; // Now takes a list of JSON objects from Gemini
+  final List<dynamic> questions;
 
   QuizScreen({required this.questions});
 
@@ -32,16 +32,16 @@ class _QuizScreenState extends State<QuizScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text("Quiz Completed!"),
+        title: const Text("Quiz Completed!"),
         content: Text("Your Score: $totalScore / ${widget.questions.length}"),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Back to Note Detail
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
-            child: Text("Finish"),
-          )
+            child: const Text("Finish"),
+          ),
         ],
       ),
     );
@@ -53,11 +53,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("AI Assessment"),
+        title: const Text("AI Assessment"),
         backgroundColor: Colors.purple,
       ),
       body: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -66,17 +66,17 @@ class _QuizScreenState extends State<QuizScreen> {
               backgroundColor: Colors.grey[200],
               color: Colors.purple,
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             Text(
               "Question ${currentQuestionIndex + 1}:",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               currentQuestion['question'],
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             ...List.generate(4, (index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -85,11 +85,14 @@ class _QuizScreenState extends State<QuizScreen> {
                     padding: EdgeInsets.symmetric(vertical: 15),
                     backgroundColor: isAnswered
                         ? (index == currentQuestion['correctIndex']
-                            ? Colors.green[100]
-                            : (index == selectedIndex ? Colors.red[100] : null))
+                              ? Colors.green[100]
+                              : (index == selectedIndex
+                                    ? Colors.red[100]
+                                    : null))
                         : null,
                     side: BorderSide(
-                      color: isAnswered && index == currentQuestion['correctIndex']
+                      color:
+                          isAnswered && index == currentQuestion['correctIndex']
                           ? Colors.green
                           : Colors.grey[300]!,
                     ),
@@ -107,7 +110,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         },
                   child: Text(
                     currentQuestion['options'][index],
-                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16),
                   ),
                 ),
               );
@@ -117,8 +120,13 @@ class _QuizScreenState extends State<QuizScreen> {
               ElevatedButton(
                 onPressed: nextQuestion,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple, padding: EdgeInsets.all(15)),
-                child: Text("Next Question", style: TextStyle(color: Colors.white)),
+                  backgroundColor: Colors.purple,
+                  padding: const EdgeInsets.all(15),
+                ),
+                child: const Text(
+                  "Next Question",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
           ],
         ),

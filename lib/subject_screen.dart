@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'notes_list_screen.dart'; // We will create this for the next step
+import 'notes_list_screen.dart'; 
 
 class SubjectScreen extends StatelessWidget {
   final String branch;
@@ -16,7 +16,7 @@ class SubjectScreen extends StatelessWidget {
         backgroundColor: Colors.teal,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Query: Fetch only subjects that match the selected branch and semester
+        
         stream: FirebaseFirestore.instance
             .collection('subjects')
             .where('branch', isEqualTo: branch)

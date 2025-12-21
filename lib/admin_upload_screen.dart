@@ -16,7 +16,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   String selectedBranch = 'Computer Science';
   String selectedSem = 'S1';
   String selectedModule = 'Module 1';
-  String? selectedSubject; // For Dropdown
+  String? selectedSubject; 
 
   List<String> branches = [
     'Computer Science',
@@ -36,7 +36,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     'Module 6',
   ];
 
-  // Data for Auto-Population
+  
   Map<String, Map<String, List<String>>> get courseData => {
     'Computer Science': {
       'S1': [
@@ -449,7 +449,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     },
   };
 
-  // Logic to convert Drive "view" links to "direct download" links for the PDF Viewer
+  
   String convertToDirectLink(String originalUrl) {
     if (originalUrl.contains("drive.google.com")) {
       final RegExp regExp = RegExp(r"\/d\/([a-zA-Z0-9_-]+)\/");
@@ -485,7 +485,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // Branch & Sem Selectors FIRST so Subject can update
+              
               Row(
                 children: [
                   Expanded(
@@ -502,7 +502,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       onChanged: (val) {
                         setState(() {
                           selectedBranch = val as String;
-                          selectedSubject = null; // Reset subject on change
+                          selectedSubject = null; 
                         });
                       },
                       decoration: InputDecoration(
@@ -523,7 +523,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       onChanged: (val) {
                         setState(() {
                           selectedSem = val as String;
-                          selectedSubject = null; // Reset subject on change
+                          selectedSubject = null; 
                         });
                       },
                       decoration: InputDecoration(
@@ -536,7 +536,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
               ),
               SizedBox(height: 15),
 
-              // CONDITIONAL SUBJECT INPUT
+              
               if (availableSubjects.isNotEmpty)
                 DropdownButtonFormField(
                   value: selectedSubject,
@@ -627,7 +627,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       _urlController.text.trim(),
                     );
 
-                    // Use Dropdown value OR Text Controller value
+                    
                     String finalSubject = availableSubjects.isNotEmpty
                         ? selectedSubject!
                         : _subjectController.text.trim();
@@ -642,7 +642,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       'summary': _summaryController.text.trim(),
                       'createdAt': Timestamp.now(),
                       'uploadedAt':
-                          Timestamp.now(), // Added for Admin Panel compatibility
+                          Timestamp.now(), 
                     });
 
                     ScaffoldMessenger.of(context).showSnackBar(

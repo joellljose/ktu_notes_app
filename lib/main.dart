@@ -8,6 +8,7 @@ import 'splash_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 
 import 'services/user_activity_service.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ void main() async {
   );
 
   UserActivityService().init();
+  await NotificationService().initNotifications();
 
   runApp(KTUNotesApp());
 }

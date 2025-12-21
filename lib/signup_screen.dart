@@ -27,7 +27,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Student Registration")),
+      appBar: AppBar(title: const Text("Student Registration")),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Form(
@@ -38,28 +38,27 @@ class _SignupScreenState extends State<SignupScreen> {
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (val) => val!.isEmpty ? "Enter email" : null,
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Password",
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (val) => val!.length < 6 ? "Min 6 characters" : null,
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-              // Branch Dropdown
               DropdownButtonFormField(
                 value: selectedBranch,
                 decoration: InputDecoration(
                   labelText: "Select Branch",
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 items: branches
                     .map((b) => DropdownMenuItem(value: b, child: Text(b)))
@@ -67,14 +66,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 onChanged: (val) =>
                     setState(() => selectedBranch = val as String),
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-              // Semester Dropdown
               DropdownButtonFormField(
                 value: selectedSem,
                 decoration: InputDecoration(
                   labelText: "Select Semester",
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 items: semesters
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -85,7 +83,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
@@ -96,7 +94,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             password: _passwordController.text.trim(),
                           );
 
-                      // 2. Save Profile to Firestore
                       await FirebaseFirestore.instance
                           .collection('users')
                           .doc(result.user!.uid)
@@ -114,7 +111,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     }
                   }
                 },
-                child: Text("REGISTER"),
+                child: const Text("REGISTER"),
               ),
             ],
           ),

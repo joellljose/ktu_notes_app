@@ -47,3 +47,8 @@ app.*.map.json
 # Environment variables
 .env
 .env*
+
+# Secrets
+serviceAccountKey.json
+**/serviceAccountKey.json
+ktu_backend/serviceAccountKey.json

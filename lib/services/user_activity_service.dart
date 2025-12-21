@@ -24,7 +24,7 @@ class UserActivityService {
   }
 
   void _startHeartbeat() {
-    _sendHeartbeat(); // Immediate first call
+    _sendHeartbeat(); 
     _heartbeatTimer = Timer.periodic(
       Duration(minutes: _heartbeatIntervalMinutes),
       (timer) => _sendHeartbeat(),
@@ -39,7 +39,7 @@ class UserActivityService {
           {
             'lastActive': FieldValue.serverTimestamp(),
             'isOnline':
-                true, // Simple flag, though timestamp is better source of truth
+                true, 
           },
         );
       } catch (e) {
@@ -62,10 +62,10 @@ class UserActivityService {
   Future<void> _flushClicks() async {
     if (_localClickCount > 0) {
       int clicksToSync = _localClickCount;
-      _localClickCount = 0; // Reset local immediately
+      _localClickCount = 0; 
 
       try {
-        // We use a global stats document. In high scale, we'd shard this.
+        
         await FirebaseFirestore.instance
             .collection('stats')
             .doc('activity')
@@ -75,7 +75,7 @@ class UserActivityService {
             }, SetOptions(merge: true));
       } catch (e) {
         print("Click flush failed: $e");
-        _localClickCount += clicksToSync; // Restore count on failure
+        _localClickCount += clicksToSync; 
       }
     }
   }
@@ -83,6 +83,6 @@ class UserActivityService {
   void dispose() {
     _heartbeatTimer?.cancel();
     _clickFlushTimer?.cancel();
-    _flushClicks(); // Try one last flush
+    _flushClicks(); 
   }
 }

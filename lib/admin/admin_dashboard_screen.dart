@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dashboard_view.dart';
 import 'notes_manager_view.dart';
 
@@ -18,7 +20,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 600) {
-          // Mobile Layout: BottomNavigationBar
+          
           return Scaffold(
             appBar: AppBar(
               title: Text("Admin Panel", style: GoogleFonts.poppins()),
@@ -45,9 +47,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ],
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _showNotificationDialog,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.notifications_active),
+            ),
           );
         } else {
-          // Desktop Layout: NavigationRail
+          
           return Scaffold(
             backgroundColor: Color(0xFFF5F7FA),
             body: Row(
@@ -106,6 +113,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Expanded(child: _pages[_selectedIndex]),
               ],
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _showNotificationDialog,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.notifications_active),
+            ),
           );
         }
       },
@@ -114,8 +126,102 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-    // After logout, AuthGate will handle showing LoginScreen,
-    // but explicit navigation helps clear state if needed.
+    
+    
     Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
+  
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  bool _isSending = false;
+
+  void _showNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Send Push Notification"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: "Title",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _bodyController,
+                decoration: InputDecoration(
+                  labelText: "Body",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            if (_isSending)
+              Center(child: CircularProgressIndicator())
+            else ...[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  
+                  
+                  
+                  await _sendNotification();
+                  Navigator.pop(context);
+                },
+                child: Text("Send"),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendNotification() async {
+    setState(() => _isSending = true);
+
+    
+    
+    const String backendUrl = "http://10.0.2.2:5000/send-notification";
+
+    try {
+      final response = await http.post(
+        Uri.parse(backendUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "title": _titleController.text,
+          "body": _bodyController.text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Notification Sent Successfully!")),
+        );
+        _titleController.clear();
+        _bodyController.clear();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed: ${response.body}")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() => _isSending = false);
+    }
   }
 }

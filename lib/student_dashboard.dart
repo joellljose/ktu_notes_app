@@ -3,21 +3,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'module_list_screen.dart';
 import 'admin_upload_screen.dart';
-import 'profile_screen.dart'; // Import your new Profile Screen
+import 'profile_screen.dart';
 import 'community_chat_screen.dart';
+import 'notification_history_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    // Safety check if user session is lost
     if (user == null)
-      return Scaffold(body: Center(child: Text("Not Logged In")));
+      return Scaffold(body: const Center(child: Text("Not Logged In")));
 
     return Scaffold(
       appBar: AppBar(
-        // SECRET ACCESS: Long press the title to enter Admin Upload Screen
         title: GestureDetector(
           onLongPress: () {
             Navigator.push(
@@ -28,13 +27,24 @@ class StudentDashboard extends StatelessWidget {
               context,
             ).showSnackBar(SnackBar(content: Text("Entering Admin Mode...")));
           },
-          child: Text("KTU Subjects"),
+          child: const Text("KTU Subjects"),
         ),
         backgroundColor: Colors.teal,
         actions: [
-          // PROFILE ICON: Navigate to Profile Screen
           IconButton(
-            icon: Icon(Icons.account_circle, size: 28),
+            icon: const Icon(Icons.notifications),
+            tooltip: "Notifications",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationHistoryScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle, size: 28),
             tooltip: "My Profile",
             onPressed: () {
               Navigator.push(
@@ -43,15 +53,14 @@ class StudentDashboard extends StatelessWidget {
               );
             },
           ),
-          // LOGOUT BUTTON
+
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () => FirebaseAuth.instance.signOut(),
           ),
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        // Fetch User profile to get their specific Branch and Semester
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -68,10 +77,10 @@ class StudentDashboard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Profile Error. Please check your connection."),
+                  const Text("Profile Error. Please check your connection."),
                   ElevatedButton(
                     onPressed: () => FirebaseAuth.instance.signOut(),
-                    child: Text("Logout"),
+                    child: const Text("Logout"),
                   ),
                 ],
               ),
@@ -85,7 +94,6 @@ class StudentDashboard extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Header showing user's current status
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16),
@@ -103,7 +111,7 @@ class StudentDashboard extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.chat, color: Colors.teal),
+                          icon: const Icon(Icons.chat, color: Colors.teal),
                           tooltip: "Class Chat",
                           onPressed: () {
                             Navigator.push(
@@ -117,7 +125,7 @@ class StudentDashboard extends StatelessWidget {
                             );
                           },
                         ),
-                        Icon(Icons.school, color: Colors.teal, size: 20),
+                        const Icon(Icons.school, color: Colors.teal, size: 20),
                       ],
                     ),
                   ],
@@ -126,9 +134,6 @@ class StudentDashboard extends StatelessWidget {
 
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  // QUERY LOGIC:
-                  // If S1/S2, show 'Common' branch notes.
-                  // If S3+, show notes matching their specific branch.
                   stream: (semester == 'S1' || semester == 'S2')
                       ? FirebaseFirestore.instance
                             .collection('notes')
@@ -142,16 +147,14 @@ class StudentDashboard extends StatelessWidget {
                   builder: (context, noteSnapshot) {
                     if (noteSnapshot.connectionState ==
                         ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
 
-                    // 1. Safe data extraction to prevent crashes from old documents
                     var validDocs = noteSnapshot.data!.docs.where((doc) {
                       var data = doc.data() as Map<String, dynamic>;
                       return data.containsKey('subject');
                     }).toList();
 
-                    // 2. Extract Unique Subjects
                     var subjects = validDocs
                         .map((doc) => doc['subject'] as String)
                         .toSet()
@@ -164,7 +167,7 @@ class StudentDashboard extends StatelessWidget {
                           child: Text(
                             "No subjects found for $semester $branch yet.\n\n(Admin must add notes with the correct branch/sem labels)",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ),
                       );
@@ -182,7 +185,7 @@ class StudentDashboard extends StatelessWidget {
                               backgroundColor: Colors.blueAccent.withOpacity(
                                 0.2,
                               ),
-                              child: Icon(Icons.book, color: Colors.teal),
+                              child: const Icon(Icons.book, color: Colors.teal),
                             ),
                             title: Text(
                               subjects[index],
@@ -191,8 +194,11 @@ class StudentDashboard extends StatelessWidget {
                                 fontSize: 16,
                               ),
                             ),
-                            subtitle: Text("View all modules"),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                            subtitle: const Text("View all modules"),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,

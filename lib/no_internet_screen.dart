@@ -15,7 +15,7 @@ class _NoInternetScreenState extends State<NoInternetScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
     )..repeat();
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
@@ -71,7 +71,7 @@ class _NoInternetScreenState extends State<NoInternetScreen>
                       shape: BoxShape.circle,
                       color: Colors.red.withOpacity(0.1),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.wifi_off_rounded,
                       size: 80,
                       color: Colors.red,
@@ -80,8 +80,8 @@ class _NoInternetScreenState extends State<NoInternetScreen>
                 ),
               ],
             ),
-            SizedBox(height: 40),
-            Text(
+            const SizedBox(height: 40),
+            const Text(
               "No Connection",
               style: TextStyle(
                 fontSize: 24,
@@ -89,20 +89,23 @@ class _NoInternetScreenState extends State<NoInternetScreen>
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 10),
-            Text(
+            const SizedBox(height: 10),
+            const Text(
               "Please check your internet settings\nand try again.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: () {}, // Connection listener will auto-dismiss
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 15,
+                ),
               ),
-              child: Text(
+              child: const Text(
                 "Waiting for Network...",
                 style: TextStyle(color: Colors.white),
               ),
