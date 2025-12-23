@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 class AdminUploadScreen extends StatefulWidget {
   @override
   _AdminUploadScreenState createState() => _AdminUploadScreenState();
@@ -13,10 +16,12 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   final TextEditingController _summaryController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
 
+  bool _isGeneratingSummary = false;
+
   String selectedBranch = 'Computer Science';
   String selectedSem = 'S1';
   String selectedModule = 'Module 1';
-  String? selectedSubject; 
+  String? selectedSubject;
 
   List<String> branches = [
     'Computer Science',
@@ -36,7 +41,55 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     'Module 6',
   ];
 
-  
+  Future<void> _generateSummary() async {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a Google Drive Link first")),
+      );
+      return;
+    }
+
+    // Use the existing helper method to convert Drive links
+    String directUrl = convertToDirectLink(url);
+
+    setState(() {
+      _isGeneratingSummary = true;
+    });
+
+    try {
+      // Use your computer's IP (for emulator use 10.0.2.2, for physical device use your local IP)
+      // Since this is a separate backend file running on 5001
+      final apiUrl = Uri.parse('https://summary-backend-ae35.onrender.com/generate-summary');
+
+      final response = await http.post(
+        apiUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'url': directUrl}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _summaryController.text = data['summary'] ?? "No summary generated.";
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Summary Generated Successfully! ✨")),
+        );
+      } else {
+        throw Exception("Failed: ${response.body}");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error generating summary: $e")));
+    } finally {
+      setState(() {
+        _isGeneratingSummary = false;
+      });
+    }
+  }
+
   Map<String, Map<String, List<String>>> get courseData => {
     'Computer Science': {
       'S1': [
@@ -449,7 +502,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     },
   };
 
-  
   String convertToDirectLink(String originalUrl) {
     if (originalUrl.contains("drive.google.com")) {
       final RegExp regExp = RegExp(r"\/d\/([a-zA-Z0-9_-]+)\/");
@@ -485,7 +537,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           key: _formKey,
           child: Column(
             children: [
-              
               Row(
                 children: [
                   Expanded(
@@ -502,7 +553,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       onChanged: (val) {
                         setState(() {
                           selectedBranch = val as String;
-                          selectedSubject = null; 
+                          selectedSubject = null;
                         });
                       },
                       decoration: InputDecoration(
@@ -523,7 +574,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       onChanged: (val) {
                         setState(() {
                           selectedSem = val as String;
-                          selectedSubject = null; 
+                          selectedSubject = null;
                         });
                       },
                       decoration: InputDecoration(
@@ -536,7 +587,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
               ),
               SizedBox(height: 15),
 
-              
               if (availableSubjects.isNotEmpty)
                 DropdownButtonFormField(
                   value: selectedSubject,
@@ -602,15 +652,49 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                 ),
               ),
               SizedBox(height: 15),
-              TextFormField(
-                controller: _summaryController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: "AI Summary",
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _summaryController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: "AI Summary",
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) => val!.isEmpty ? "Required" : null,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  onPressed: _isGeneratingSummary ? null : _generateSummary,
+                  icon: _isGeneratingSummary
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(Icons.auto_awesome, size: 18),
+                  label: Text(
+                    _isGeneratingSummary
+                        ? "Generating..."
+                        : "Auto-Generate AI Summary",
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                    textStyle: TextStyle(fontSize: 12),
+                  ),
                 ),
-                validator: (val) => val!.isEmpty ? "Required" : null,
               ),
               SizedBox(height: 30),
               ElevatedButton(
@@ -627,7 +711,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       _urlController.text.trim(),
                     );
 
-                    
                     String finalSubject = availableSubjects.isNotEmpty
                         ? selectedSubject!
                         : _subjectController.text.trim();
@@ -641,8 +724,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                       'module': selectedModule,
                       'summary': _summaryController.text.trim(),
                       'createdAt': Timestamp.now(),
-                      'uploadedAt':
-                          Timestamp.now(), 
+                      'uploadedAt': Timestamp.now(),
                     });
 
                     ScaffoldMessenger.of(context).showSnackBar(

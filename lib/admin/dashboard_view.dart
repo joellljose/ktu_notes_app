@@ -22,7 +22,6 @@ class DashboardView extends StatelessWidget {
           var docs = snapshot.data!.docs;
           int totalNotes = docs.length;
 
-          
           Map<String, int> branchDist = {};
           for (var doc in docs) {
             var data = doc.data() as Map<String, dynamic>;
@@ -30,15 +29,8 @@ class DashboardView extends StatelessWidget {
             branchDist[b] = (branchDist[b] ?? 0) + 1;
           }
 
-          
-          
-          
-          
           Map<String, int> activityMap = {};
           for (var doc in docs) {
-            
-            
-            
             var data = doc.data() as Map<String, dynamic>;
             if (data['uploadedAt'] != null) {
               DateTime date = (data['uploadedAt'] as Timestamp).toDate();
@@ -47,9 +39,8 @@ class DashboardView extends StatelessWidget {
             }
           }
 
-          
           var sortedKeys = activityMap.keys.toList()..sort();
-          
+
           if (sortedKeys.length > 7)
             sortedKeys = sortedKeys.sublist(sortedKeys.length - 7);
 
@@ -76,7 +67,6 @@ class DashboardView extends StatelessWidget {
                   ),
                   SizedBox(height: 20),
 
-                  
                   if (isMobile)
                     Column(
                       children: [
@@ -85,6 +75,8 @@ class DashboardView extends StatelessWidget {
                         Container(height: 100, child: _OnlineUserCounterCard()),
                         SizedBox(height: 15),
                         Container(height: 100, child: _ClickCounterCard()),
+                        SizedBox(height: 15),
+                        Container(height: 100, child: _QuizCounterCard()),
                         SizedBox(height: 15),
                         Container(
                           height: 100,
@@ -116,6 +108,8 @@ class DashboardView extends StatelessWidget {
                         SizedBox(width: 20),
                         Expanded(child: _ClickCounterCard()),
                         SizedBox(width: 20),
+                        Expanded(child: _QuizCounterCard()),
+                        SizedBox(width: 20),
                         _buildStatCard(
                           "Live Notes",
                           totalNotes.toString(),
@@ -133,7 +127,6 @@ class DashboardView extends StatelessWidget {
                     ),
                   SizedBox(height: 30),
 
-                  
                   if (isMobile)
                     Column(
                       children: [
@@ -309,7 +302,6 @@ class DashboardView extends StatelessWidget {
                     ),
                   SizedBox(height: 30),
 
-                  
                   Text(
                     "System Terminal /// Live Feed",
                     style: GoogleFonts.firaCode(
@@ -324,7 +316,7 @@ class DashboardView extends StatelessWidget {
                     height: 200,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFF1E1E2C), 
+                      color: Color(0xFF1E1E2C),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -335,14 +327,12 @@ class DashboardView extends StatelessWidget {
                       ],
                     ),
                     child: ListView.builder(
-                      itemCount: docs.length > 20
-                          ? 20
-                          : docs.length, 
+                      itemCount: docs.length > 20 ? 20 : docs.length,
                       itemBuilder: (context, index) {
                         var data = docs[index].data() as Map<String, dynamic>;
                         String subject = data['subject'] ?? 'Unknown Subject';
                         String branch = data['branch'] ?? 'Unknown Branch';
-                        
+
                         String timeStr = "Just now";
                         if (data['uploadedAt'] != null) {
                           timeStr = DateFormat(
@@ -557,7 +547,7 @@ class _OnlineUserCounterCard extends StatelessWidget {
             final data = doc.data() as Map<String, dynamic>;
             if (data['lastActive'] == null) return false;
             final lastActive = (data['lastActive'] as Timestamp).toDate();
-            
+
             return now.difference(lastActive).inMinutes < 7;
           }).length;
           count = activeUsers.toString();
@@ -644,6 +634,65 @@ class _ClickCounterCard extends StatelessWidget {
                   children: [
                     Text(
                       "Total Clicks",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _QuizCounterCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('stats')
+          .doc('quiz_generation')
+          .snapshots(),
+      builder: (context, snapshot) {
+        String count = "...";
+        if (snapshot.hasData && snapshot.data!.exists) {
+          var data = snapshot.data!.data() as Map<String, dynamic>;
+          count = (data['count'] ?? 0).toString();
+        } else if (snapshot.hasData && !snapshot.data!.exists) {
+          count = "0";
+        }
+
+        return Container(
+          height: 100,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.indigo.withOpacity(0.1),
+                child: Icon(Icons.psychology, color: Colors.indigo),
+              ),
+              SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "AI Generated Quizzes",
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(

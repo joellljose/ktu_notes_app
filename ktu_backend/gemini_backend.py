@@ -6,25 +6,30 @@ import re
 import requests
 import fitz  
 import os
-
-import os
+import firebase_admin
+from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)
 
-
 load_dotenv()
 
-
+# --- Firebase Init ---
+try:
+    if not firebase_admin._apps:
+        cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+    print("Firebase Admin Initialized")
+except Exception as e:
+    print(f"Warning: Firebase Admin not initialized: {e}")
+# ---------------------
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not API_KEY:
-    
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
 genai.configure(api_key=API_KEY)
-
 
 MODEL_NAME = 'gemini-2.5-flash' 
 
@@ -55,7 +60,6 @@ def generate_quiz():
         
         source_text = ""
 
-        
         if input_text and input_text.strip():
             print("Generating quiz from provided description/text...")
             source_text = input_text
@@ -67,7 +71,6 @@ def generate_quiz():
 
         if not source_text.strip():
              return jsonify({"error": "Extracted text is empty"}), 400
-
         
         model = genai.GenerativeModel(model_name=MODEL_NAME)
         
@@ -84,9 +87,17 @@ def generate_quiz():
         {source_text[:12000]}
         """
 
-        
         response = model.generate_content(prompt)
         
+        # --- Increment Quiz Counter ---
+        try:
+            db = firestore.client()
+            stats_ref = db.collection('stats').document('quiz_generation')
+            stats_ref.set({'count': firestore.Increment(1)}, merge=True)
+            print("Quiz generation counter incremented.")
+        except Exception as db_error:
+            print(f"Error updating Firestore stats: {db_error}")
+        # ------------------------------
         
         clean_json = re.sub(r'```json|```', '', response.text).strip()
         quiz_data = json.loads(clean_json)
@@ -102,7 +113,6 @@ def participatory_start():
     try:
         data = request.get_json()
         input_text = data.get('text', '')
-        
         
         model = genai.GenerativeModel(model_name=MODEL_NAME)
         
@@ -141,7 +151,6 @@ def participatory_evaluate():
         student_question = data.get('question', '')
         challenge_context = data.get('challenge', '')
 
-        
         model = genai.GenerativeModel(model_name=MODEL_NAME)
 
         prompt = f"""
@@ -176,5 +185,4 @@ def participatory_evaluate():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    
     app.run(host='0.0.0.0', port=5000, debug=True)

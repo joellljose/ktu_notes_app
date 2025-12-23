@@ -57,7 +57,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     });
 
     try {
-      
       final fileName =
           md5.convert(utf8.encode(widget.pdfUrl)).toString() + ".pdf";
       final dir = await getApplicationDocumentsDirectory();
@@ -110,7 +109,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
   }
 
   Future<void> _generateAIQuiz(BuildContext context) async {
-    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -119,15 +117,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     );
 
     try {
-      
       final response = await http.post(
         Uri.parse('https://api-gemini-notes.onrender.com/generate-quiz'),
         headers: {'Content-Type': 'application/json'},
-        
+
         body: json.encode({'text': widget.summary}),
       );
 
-      Navigator.pop(context); 
+      Navigator.pop(context);
 
       if (response.statusCode == 200) {
         List<dynamic> questions = json.decode(response.body);
@@ -138,13 +135,25 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
           ),
         );
       } else {
-        throw Exception("Failed to load quiz");
+        throw Exception(
+          "Failed to load quiz. Status: ${response.statusCode}, Body: ${response.body}",
+        );
       }
     } catch (e) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("AI Error: $e")));
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("AI Error"),
+          content: SingleChildScrollView(child: Text(e.toString())),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
     }
   }
 
