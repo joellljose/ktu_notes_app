@@ -46,6 +46,40 @@ class ModuleListScreen extends StatelessWidget {
                     return ListTile(
                       leading: Icon(Icons.description, color: Colors.redAccent),
                       title: Text(data['title'] ?? "Untitled Note"),
+                      subtitle: data['verifiedBy'] != null
+                          ? Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                margin: EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: data['verifiedBy'] == 'AI'
+                                      ? Colors.purple[50]
+                                      : Colors.green[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: data['verifiedBy'] == 'AI'
+                                        ? Colors.purple
+                                        : Colors.green,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  "Verified by ${data['verifiedBy']}",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: data['verifiedBy'] == 'AI'
+                                        ? Colors.purple
+                                        : Colors.green[800],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(

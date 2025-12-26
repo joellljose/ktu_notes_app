@@ -6,6 +6,7 @@ import 'admin_upload_screen.dart';
 import 'profile_screen.dart';
 import 'community_chat_screen.dart';
 import 'notification_history_screen.dart';
+import 'student_upload_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   @override
@@ -221,6 +222,17 @@ class StudentDashboard extends StatelessWidget {
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => StudentUploadScreen()),
+          );
+        },
+        icon: const Icon(Icons.upload_file),
+        label: const Text("Upload Note"),
+        backgroundColor: Colors.teal,
       ),
     );
   }

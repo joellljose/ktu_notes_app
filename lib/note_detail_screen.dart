@@ -86,7 +86,17 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     setState(() => _loadingMessage = "Downloading Note...\nAlmost there!");
 
     try {
-      final response = await http.get(Uri.parse(widget.pdfUrl));
+      final uri = Uri.parse(widget.pdfUrl.trim());
+      print("Downloading from: $uri"); // Debug log
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': '*/*',
+        },
+      );
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
         if (mounted) {
@@ -96,13 +106,16 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
           });
         }
       } else {
-        throw Exception("Failed to download PDF");
+        throw Exception(
+          "Failed to download PDF. Status: ${response.statusCode}",
+        );
       }
     } catch (e) {
+      print("Download Error: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _loadingMessage = "Download Failed. Please check internet.";
+          _loadingMessage = "Error: $e";
         });
       }
     }
@@ -208,9 +221,51 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                       ],
                     ),
                   )
-                : (_localPath != null
-                      ? SfPdfViewer.file(File(_localPath!))
-                      : Center(child: Text("Unable to load PDF"))),
+                : _localPath != null
+                ? SfPdfViewer.file(File(_localPath!))
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.amber,
+                        ),
+                        SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Text(
+                            "Unable to load PDF",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Text(
+                            _loadingMessage,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _loadFile,
+                          icon: Icon(Icons.refresh),
+                          label: Text("Retry"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
           Expanded(
             flex: 2,

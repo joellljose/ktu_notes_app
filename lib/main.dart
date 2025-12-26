@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -14,17 +15,33 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyCvYF6pEvsXkCaJFLOqWoAU1W-F6-X_wfQ",
-      appId: "1:171227597422:android:94b2120978d2bb7ba5747f",
-      messagingSenderId: "171227597422",
-      projectId: "ai-ktu-notes-app",
-      storageBucket: "ai-ktu-notes-app.firebasestorage.app",
-    ),
+    options: kIsWeb
+        ? const FirebaseOptions(
+            apiKey: "AIzaSyCvXII1XF6_FWWYYfhpypNQS5sw1txExwY",
+            appId: "1:171227597422:web:e20213b7f3cfea2ba5747f",
+            messagingSenderId: "171227597422",
+            projectId: "ai-ktu-notes-app",
+            storageBucket: "ai-ktu-notes-app.firebasestorage.app",
+            authDomain: "ai-ktu-notes-app.firebaseapp.com",
+            measurementId: "G-PNJ98N6WCD",
+          )
+        : const FirebaseOptions(
+            apiKey: "AIzaSyCvYF6pEvsXkCaJFLOqWoAU1W-F6-X_wfQ",
+            appId: "1:171227597422:android:94b2120978d2bb7ba5747f",
+            messagingSenderId: "171227597422",
+            projectId: "ai-ktu-notes-app",
+            storageBucket: "ai-ktu-notes-app.firebasestorage.app",
+          ),
   );
 
   UserActivityService().init();
-  await NotificationService().initNotifications();
+  try {
+    await NotificationService().initNotifications();
+  } catch (e) {
+    if (kDebugMode) {
+      print("Error initializing notifications: $e");
+    }
+  }
 
   runApp(KTUNotesApp());
 }

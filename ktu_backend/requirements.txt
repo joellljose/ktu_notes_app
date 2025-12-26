@@ -5,3 +5,9 @@ requests
 pymupdf
 gunicorn
 python-dotenv
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+cloudinary
+firebase-admin
+dotenv

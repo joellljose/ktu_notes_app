@@ -88,15 +88,14 @@ class DashboardView extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 15),
-                        Container(
-                          height: 100,
-                          child: _buildStatCard(
-                            "Active Branches",
-                            branchDist.keys.length.toString(),
-                            Icons.category,
-                            Colors.orange,
-                          ),
+                        _buildStatCard(
+                          "Active Branches",
+                          branchDist.keys.length.toString(),
+                          Icons.category,
+                          Colors.orange,
                         ),
+                        SizedBox(height: 15),
+                        _ApiUsageStatsCard(),
                       ],
                     )
                   else
@@ -110,19 +109,25 @@ class DashboardView extends StatelessWidget {
                         SizedBox(width: 20),
                         Expanded(child: _QuizCounterCard()),
                         SizedBox(width: 20),
-                        _buildStatCard(
-                          "Live Notes",
-                          totalNotes.toString(),
-                          Icons.library_books,
-                          Colors.green,
+                        Expanded(
+                          child: _buildStatCard(
+                            "Live Notes",
+                            totalNotes.toString(),
+                            Icons.library_books,
+                            Colors.green,
+                          ),
                         ),
                         SizedBox(width: 20),
-                        _buildStatCard(
-                          "Active Branches",
-                          branchDist.keys.length.toString(),
-                          Icons.category,
-                          Colors.orange,
+                        Expanded(
+                          child: _buildStatCard(
+                            "Active Branches",
+                            branchDist.keys.length.toString(),
+                            Icons.category,
+                            Colors.orange,
+                          ),
                         ),
+                        SizedBox(width: 20),
+                        Container(width: 200, child: _ApiUsageStatsCard()),
                       ],
                     ),
                   SizedBox(height: 30),
@@ -416,40 +421,35 @@ class DashboardView extends StatelessWidget {
     IconData icon,
     Color color,
   ) {
-    return Expanded(
-      child: Container(
-        height: 100,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
-              child: Icon(icon, color: color),
+    return Container(
+      height: 100,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: color.withOpacity(0.1),
+            child: Icon(icon, color: color),
+          ),
+          SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(title, style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  value,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ],
             ),
-            SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  Text(
-                    value,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -705,6 +705,75 @@ class _QuizCounterCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ApiUsageStatsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('stats')
+          .doc('api_usage')
+          .snapshots(),
+      builder: (context, snapshot) {
+        Map<String, dynamic> data = {};
+        if (snapshot.hasData && snapshot.data!.exists) {
+          data = snapshot.data!.data() as Map<String, dynamic>;
+        }
+
+        // We expect keys like key_1, key_2, key_3, key_4
+        List<Widget> usageRows = List.generate(4, (index) {
+          String key = "key_${index + 1}";
+          int count = data[key] ?? 0;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Key ${index + 1}",
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                Text(
+                  "$count",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal,
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.vpn_key, color: Colors.teal, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    "API Key Usage",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+              Divider(),
+              ...usageRows,
             ],
           ),
         );
