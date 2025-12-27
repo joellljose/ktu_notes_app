@@ -201,6 +201,24 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       return;
     }
 
+    // Check file size (limit to 10MB)
+    try {
+      int fileSizeInBytes = await _selectedFile!.length();
+      double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      if (fileSizeInMB > 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "File too large (${fileSizeInMB.toStringAsFixed(2)}MB). Max 10MB allowed.",
+            ),
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      print("Error checking file size: $e");
+    }
+
     setState(() => _isUploading = true);
 
     try {
@@ -212,9 +230,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           : _subjectController.text.trim();
 
       // Use Backend for Verification & Drive Upload
-      // Use 10.0.2.2 for Android Emulator to access localhost
       var uri = Uri.parse('https://api-gemini-notes.onrender.com/verify-note');
-      // var uri = Uri.parse('http://YOUR_LOCAL_IP:5000/verify-note'); // Use this for physical device
 
       var request = http.MultipartRequest('POST', uri);
 
@@ -225,23 +241,31 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         await http.MultipartFile.fromPath('file', _selectedFile!.path),
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Uploading to AI for Verification... Please wait."),
+          duration: Duration(seconds: 2),
         ),
       );
 
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var data = json.decode(responseData);
+      // Add timeout to the request
+      var streamedResponse = await request.send().timeout(
+        Duration(seconds: 60),
+        onTimeout: () {
+          throw Exception("Connection timed out. Please try again.");
+        },
+      );
 
-      if (response.statusCode == 200) {
+      var responseData = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode == 200) {
+        var data = json.decode(responseData);
         String downloadUrl = data['url'];
         String status = data['status']; // 'approved', 'rejected', 'pending'
         String reason = data['reason'];
         String summary = data['summary'];
 
-        // Color coding for snackbar based on status
         Color snackColor = status == 'approved'
             ? Colors.green
             : (status == 'rejected' ? Colors.red : Colors.orange);
@@ -270,6 +294,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           'uploaderName': user.displayName ?? "Unknown Student",
         });
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(snackMsg),
@@ -279,14 +304,28 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         );
         Navigator.pop(context);
       } else {
-        throw Exception("Server Error: ${data['error']}");
+        String errorMsg = "Server Error: ${streamedResponse.statusCode}";
+        try {
+          var errorData = json.decode(responseData);
+          if (errorData['error'] != null) {
+            errorMsg = errorData['error'];
+          }
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Upload failed: $e"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
