@@ -42,16 +42,19 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   ];
 
   Future<void> _generateSummary() async {
-    final url = _urlController.text.trim();
-    if (url.isEmpty) {
+    // We don't strictly need the URL for the SYLLABUS based summary,
+    // but we do need the subject/module info.
+
+    String finalSubject = getAvailableSubjects().isNotEmpty
+        ? selectedSubject ?? ""
+        : _subjectController.text.trim();
+
+    if (finalSubject.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter a Google Drive Link first")),
+        SnackBar(content: Text("Please select or enter a Subject first")),
       );
       return;
     }
-
-    // Use the existing helper method to convert Drive links
-    String directUrl = convertToDirectLink(url);
 
     setState(() {
       _isGeneratingSummary = true;
@@ -60,12 +63,19 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     try {
       // Use your computer's IP (for emulator use 10.0.2.2, for physical device use your local IP)
       // Since this is a separate backend file running on 5001
-      final apiUrl = Uri.parse('https://summary-backend-ae35.onrender.com/generate-summary');
+      final apiUrl = Uri.parse(
+        'https://summary-backend-ae35.onrender.com/generate-summary',
+      );
 
       final response = await http.post(
         apiUrl,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'url': directUrl}),
+        body: json.encode({
+          'subject': finalSubject,
+          'module': selectedModule,
+          'semester': selectedSem,
+          'branch': selectedBranch,
+        }),
       );
 
       if (response.statusCode == 200) {

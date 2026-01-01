@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dashboard_view.dart';
@@ -20,13 +21,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 600) {
-          
           return Scaffold(
             appBar: AppBar(
               title: Text("Admin Panel", style: GoogleFonts.poppins()),
               backgroundColor: Colors.teal,
               actions: [
                 IconButton(icon: Icon(Icons.logout), onPressed: _logout),
+                _buildSettingsButton(),
               ],
             ),
             backgroundColor: Color(0xFFF5F7FA),
@@ -54,7 +55,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           );
         } else {
-          
           return Scaffold(
             backgroundColor: Color(0xFFF5F7FA),
             body: Row(
@@ -126,12 +126,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-    
-    
     Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 
-  
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('config')
+              .doc('settings')
+              .snapshots(),
+          builder: (context, snapshot) {
+            bool aiEnabled = true; // Default
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              aiEnabled = data['enableAiVerification'] ?? true;
+            }
+
+            return AlertDialog(
+              title: Text("App Settings"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: Text("Enable AI Verification"),
+                    subtitle: Text(
+                      "If OFF, student uploads go directly to 'Pending' for manual review.",
+                    ),
+                    value: aiEnabled,
+                    activeColor: Colors.teal,
+                    onChanged: (val) async {
+                      await FirebaseFirestore.instance
+                          .collection('config')
+                          .doc('settings')
+                          .set({
+                            'enableAiVerification': val,
+                          }, SetOptions(merge: true));
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Close"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Reuse logic for both desktop/mobile: Add settings button
+  Widget _buildSettingsButton() {
+    return IconButton(
+      icon: Icon(Icons.settings),
+      tooltip: "Settings",
+      onPressed: _showSettingsDialog,
+    );
+  }
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   bool _isSending = false;
@@ -173,9 +231,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  
-                  
-                  
                   await _sendNotification();
                   Navigator.pop(context);
                 },
@@ -191,9 +246,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _sendNotification() async {
     setState(() => _isSending = true);
 
-    
-    
-    const String backendUrl = "http://10.0.2.2:5000/send-notification";
+    const String backendUrl = "https://api-gemini-notes.onrender.com/send-notification";
 
     try {
       final response = await http.post(

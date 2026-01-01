@@ -11,3 +11,5 @@ google-auth-oauthlib
 cloudinary
 firebase-admin
 dotenv
+psutil
+APScheduler

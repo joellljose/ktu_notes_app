@@ -41,28 +41,21 @@ def extract_text_from_drive(url):
 def generate_summary():
     try:
         data = request.get_json()
-        pdf_url = data.get('url', '')
         
-        if not pdf_url:
-             return jsonify({"error": "No PDF URL provided"}), 400
+        subject = data.get('subject', 'Unknown Subject')
+        module = data.get('module', 'Unknown Module')
+        semester = data.get('semester', 'Unknown Semester')
+        branch = data.get('branch', 'Engineering')
 
-        print(f"Generating summary for: {pdf_url}...")
+        print(f"Generating summary for: {subject} - {module} ({branch}, {semester})...")
         
-        # 1. Extract Text
-        source_text = extract_text_from_drive(pdf_url)
-        
-        if not source_text.strip():
-             return jsonify({"error": "Extracted text is empty"}), 400
-
         # 2. Call Gemini
         model = genai.GenerativeModel(model_name=MODEL_NAME)
         prompt = f"""
-        Act as an academic expert. 
-        Summarize the following text into 3-5 concise, high-value bullet points suitable for quick revision.
-        Focus on key concepts, definitions, and formulas.
+        What are the specific topics and learning objectives covered in {module} of the KTU {semester} {subject} ({branch}) (2019 Scheme) syllabus?
         
-        Text:
-        {source_text[:15000]}
+        Summarize the answer into 3-5 concise, high-value bullet points suitable for quick revision for a student.
+        Focus on key concepts, definitions, and formulas if applicable.
         """
         
         response = model.generate_content(prompt)

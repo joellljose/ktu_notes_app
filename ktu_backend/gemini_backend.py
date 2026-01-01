@@ -40,13 +40,13 @@ except Exception as e:
 
 import random
 
-API_KEYS = [
-    os.environ.get("GEMINI_API_KEY_1"),
-    os.environ.get("GEMINI_API_KEY_2"),
-    os.environ.get("GEMINI_API_KEY_3"),
-    os.environ.get("GEMINI_API_KEY_4"),
-    os.environ.get("GEMINI_API_KEY"), # Fallback for legacy support
-]
+# API_KEYS = [
+#     os.environ.get("GEMINI_API_KEY_1"),
+#     os.environ.get("GEMINI_API_KEY_2"),
+#     os.environ.get("GEMINI_API_KEY_3"),
+#     os.environ.get("GEMINI_API_KEY_4"),
+#     os.environ.get("GEMINI_API_KEY"), # Fallback for legacy support
+# ]
 # Filter out None values just in case
 API_KEYS = [k for k in API_KEYS if k]
 
@@ -155,56 +155,74 @@ def verify_note():
         file.save(str(temp_path))
         print(f"Saved temp file to: {temp_path}")
 
-        # AI Verification
+        # Check Global Settings for AI Verification
+        ai_enabled = True # Default
+        try:
+            db = firestore.client()
+            settings_ref = db.collection('config').document('settings')
+            doc = settings_ref.get()
+            if doc.exists:
+                ai_enabled = doc.to_dict().get('enableAiVerification', True)
+        except Exception as db_e:
+            print(f"Error fetching settings: {db_e}. Defaulting to AI ON.")
+
+        extracted_text = ""
         status = "pending"
         reason = "AI Verification Failed or Skipped"
         ai_summary = "No summary generated."
-        
-        try:
-            # Extract text using file path (memory efficient)
-            with fitz.open(temp_path) as doc:
-                extracted_text = ""
-                for page in doc:
-                    extracted_text += page.get_text()
-            
-            if extracted_text.strip():
-                model = get_configured_model()
-                prompt = f"""
-                Act as a Syllabus Validator for KTU Engineering Course.
-                Subject: {subject}
-                Module: {module}
+
+        # If AI is disabled, skip extraction and verification
+        if not ai_enabled:
+             print("AI Verification is DISABLED by Admin. Skipping...")
+             status = "pending"
+             reason = "Manual Mode Active (AI Verification Disabled)"
+             ai_summary = "Pending Admin Review"
+        else:
+            # AI Verification Logic
+            try:
+                # Extract text using file path (memory efficient)
+                with fitz.open(temp_path) as doc:
+                    for page in doc:
+                        extracted_text += page.get_text()
                 
-                Content of the Note:
-                {extracted_text[:10000]}
-                
-                Task:
-                1. Verify if the content is relevant to the Subject and Module provided.
-                2. If relevant, status is "approved". If completely irrelevant (spam, wrong subject), status is "rejected". If unsure or partially correct, status is "pending".
-                3. Generate a short 2-sentence summary of the note.
-                
-                Return ONLY JSON:
-                {{
-                    "status": "approved" | "rejected" | "pending",
-                    "reason": "Explanation for the decision",
-                    "summary": "Short summary of the content"
-                }}
-                """
-                
-                try:
-                    response = model.generate_content(prompt)
-                    clean_json = re.sub(r'```json|```', '', response.text).strip()
-                    ai_data = json.loads(clean_json)
-                    status = ai_data.get('status', 'pending')
-                    reason = ai_data.get('reason', 'AI Review')
-                    ai_summary = ai_data.get('summary', 'Summary not found')
-                except Exception as ai_e:
-                    print(f"AI Error: {ai_e}")
-                    status = "pending"
-                    reason = "AI Processing Error, marked as pending for human review."
-        except Exception as e:
-            print(f"Extraction Error: {e}")
-            # If extraction fails (not a PDF?), we can still upload or fail
-            # For now, continue to upload but mark as pending
+                if extracted_text.strip():
+                    model = get_configured_model()
+                    prompt = f"""
+                    Act as a Syllabus Validator for KTU Engineering Course.
+                    Subject: {subject}
+                    Module: {module}
+                    
+                    Content of the Note:
+                    {extracted_text[:10000]}
+                    
+                    Task:
+                    1. Verify if the content is relevant to the Subject and Module provided.
+                    2. If relevant, status is "approved". If completely irrelevant (spam, wrong subject), status is "rejected". If unsure or partially correct, status is "pending".
+                    3. Generate a short 2-sentence summary of the note.
+                    
+                    Return ONLY JSON:
+                    {{
+                        "status": "approved" | "rejected" | "pending",
+                        "reason": "Explanation for the decision",
+                        "summary": "Short summary of the content"
+                    }}
+                    """
+                    
+                    try:
+                        response = model.generate_content(prompt)
+                        clean_json = re.sub(r'```json|```', '', response.text).strip()
+                        ai_data = json.loads(clean_json)
+                        status = ai_data.get('status', 'pending')
+                        reason = ai_data.get('reason', 'AI Review')
+                        ai_summary = ai_data.get('summary', 'Summary not found')
+                    except Exception as ai_e:
+                        print(f"AI Error: {ai_e}")
+                        status = "pending"
+                        reason = "AI Processing Error, marked as pending for human review."
+            except Exception as e:
+                print(f"Extraction Error: {e}")
+                # If extraction fails (not a PDF?), we can still upload or fail
+                # For now, continue to upload but mark as pending
 
         # Upload to Cloudinary
         print("Uploading to Cloudinary...")
@@ -413,6 +431,158 @@ def participatory_evaluate():
     except Exception as e:
         print(f"Participatory Eval Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+# --- Admin Notification Endpoint ---
+from firebase_admin import messaging
+
+@app.route('/send-notification', methods=['POST'])
+def send_notification():
+    try:
+        data = request.get_json()
+        title = data.get('title', 'Notification')
+        body = data.get('body', '')
+
+        if not body:
+            return jsonify({"error": "Body is required"}), 400
+
+        # Create message for 'all_users' topic
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            topic='all_users',
+        )
+
+        # Send
+        response = messaging.send(message)
+        print(f"Successfully sent message: {response}")
+        
+        return jsonify({"success": True, "messageId": response})
+
+    except Exception as e:
+        print(f"Notification Error: {e}")
+        return jsonify({"error": str(e)}), 500
+# --- Telegram Monitoring & Alerts ---
+import psutil
+import time
+import requests
+import traceback
+import threading
+from functools import wraps
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+import atexit
+
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+
+def send_telegram_alert(message):
+    """Sends a message to the configured Telegram chat."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram credentials not set. Skipping alert.")
+        return
+
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Failed to send Telegram alert: {e}")
+
+def get_system_status():
+    """Returns a formatted string of system stats (CPU, RAM)."""
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory()
+    ram_usage = memory.percent
+    
+    return (
+        f"ℹ️ *System Status Report*\n\n"
+        f"💻 **CPU Usage:** {cpu_percent}%\n"
+        f"🧠 **RAM Usage:** {ram_usage}%\n"
+        f"✅ **Backend Status:** Online & Active"
+    )
+
+def periodic_status_report():
+    """Scheduled job to send status report."""
+    status_msg = get_system_status()
+    send_telegram_alert(status_msg)
+
+# Initialize Scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    func=periodic_status_report,
+    trigger=IntervalTrigger(minutes=5),
+    id='status_report_job',
+    name='Send Telegram Status Report every 5 mins',
+    replace_existing=True
+)
+try:
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+    print("Telegram Background Scheduler Started.")
+    # Send an initial startup message
+    send_telegram_alert("🚀 **Backend Started Successfully**\nSystem monitoring is active.")
+except Exception as e:
+    print(f"Failed to start scheduler: {e}")
+
+# Performance Monitor Decorator
+def monitor_performance(threshold_seconds=10):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = f(*args, **kwargs)
+                return result
+            except Exception as e:
+                # Let the global error handler catch exceptions
+                raise e
+            finally:
+                execution_time = time.time() - start_time
+                if execution_time > threshold_seconds:
+                    endpoint = request.path
+                    alert_msg = (
+                        f"⚠️ **Slow Performance Alert**\n\n"
+                        f"📍 **Endpoint:** `{endpoint}`\n"
+                        f"⏱️ **Time Taken:** {execution_time:.2f}s\n"
+                        f"⚠️ **Threshold:** {threshold_seconds}s"
+                    )
+                    # Run alert in background to not block response more
+                    threading.Thread(target=send_telegram_alert, args=(alert_msg,)).start()
+        return wrapper
+    return decorator
+
+# Global Error Handler
+@app.errorhandler(Exception)
+def handle_global_exception(e):
+    # Get traceback
+    tb_str = traceback.format_exc()
+    endpoint = request.path
+    method = request.method
+    
+    alert_msg = (
+        f"🚨 **CRASH ALERT** 🚨\n\n"
+        f"📍 **Endpoint:** `{method} {endpoint}`\n"
+        f"❌ **Error:** `{str(e)}`\n\n"
+        f"📜 **Traceback:**\n```python\n{tb_str[:1500]}...```" # Truncate if too long
+    )
+    
+    # Send alert in background
+    threading.Thread(target=send_telegram_alert, args=(alert_msg,)).start()
+    
+    # Return standard error to client
+    print(f"Global Error Caught: {e}")
+    return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+
+# Wrap critical endpoints with performance monitor
+app.view_functions['verify_note'] = monitor_performance(threshold_seconds=15)(app.view_functions['verify_note'])
+app.view_functions['generate_quiz'] = monitor_performance(threshold_seconds=10)(app.view_functions['generate_quiz'])
+app.view_functions['generate_summary'] = monitor_performance(threshold_seconds=10)(app.view_functions['generate_summary'])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

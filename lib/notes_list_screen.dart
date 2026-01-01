@@ -158,6 +158,63 @@ class _NotesListScreenState extends State<NotesListScreen> {
                         ),
                       );
                     },
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.visibility_outlined,
+                        color: Colors.teal,
+                      ),
+                      tooltip: 'View AI Summary',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Row(
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  color: Colors.purple,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "AI Summary",
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    notes[index]['title'],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Divider(),
+                                  Text(
+                                    notes[index]['summary'] ??
+                                        "No summary available.",
+                                    style: TextStyle(fontSize: 15, height: 1.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("Close"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               );

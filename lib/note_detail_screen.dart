@@ -25,6 +25,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     with SingleTickerProviderStateMixin {
   String? _localPath;
   bool _isLoading = true;
+  bool _isFullScreen = false;
   String _loadingMessage = "Initializing...";
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -173,91 +174,204 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: Colors.teal),
+      appBar: _isFullScreen
+          ? null
+          : AppBar(
+              title: Text(widget.title),
+              backgroundColor: Colors.teal,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.visibility, color: Colors.white),
+                  tooltip: 'View Summary',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome,
+                              color: Colors.purple,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text("AI Summary"),
+                          ],
+                        ),
+                        content: SingleChildScrollView(
+                          child: Text(
+                            widget.summary.isNotEmpty
+                                ? widget.summary
+                                : "No summary available.",
+                            style: TextStyle(fontSize: 15, height: 1.5),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Close"),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
       body: Column(
         children: [
           Expanded(
-            flex: 3,
-            child: _isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.teal.withOpacity(0.1),
+            flex: _isFullScreen ? 1 : 3,
+            child: Stack(
+              children: [
+                _isLoading
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.teal.withOpacity(0.1),
+                                ),
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 60,
+                                  color: Colors.teal,
+                                ),
+                              ),
                             ),
-                            child: Icon(
-                              Icons.menu_book_rounded,
-                              size: 60,
-                              color: Colors.teal,
+                            SizedBox(height: 20),
+                            Text(
+                              _loadingMessage,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          _loadingMessage,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        SizedBox(
-                          width: 150,
-                          child: LinearProgressIndicator(
-                            backgroundColor: Colors.teal.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.teal,
+                            SizedBox(height: 20),
+                            SizedBox(
+                              width: 150,
+                              child: LinearProgressIndicator(
+                                backgroundColor: Colors.teal.withOpacity(0.2),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.teal,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      )
+                    : _localPath != null
+                    ? SfPdfViewer.file(File(_localPath!))
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.amber,
+                            ),
+                            SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                              ),
+                              child: Text(
+                                "Unable to load PDF",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                              ),
+                              child: Text(
+                                _loadingMessage,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ),
+                            SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: _loadFile,
+                              icon: Icon(Icons.refresh),
+                              label: Text("Retry"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.teal,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                if (!_isLoading && _localPath != null)
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: FloatingActionButton(
+                      mini: true,
+                      backgroundColor: Colors.teal.withOpacity(0.8),
+                      child: Icon(
+                        _isFullScreen
+                            ? Icons.fullscreen_exit
+                            : Icons.fullscreen,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isFullScreen = !_isFullScreen;
+                        });
+                      },
                     ),
-                  )
-                : _localPath != null
-                ? SfPdfViewer.file(File(_localPath!))
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+              ],
+            ),
+          ),
+          if (!_isFullScreen)
+            Expanded(
+              flex: 2,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.amber,
-                        ),
-                        SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            "Unable to load PDF",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            _loadingMessage,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ),
-                        SizedBox(height: 24),
                         ElevatedButton.icon(
-                          onPressed: _loadFile,
-                          icon: Icon(Icons.refresh),
-                          label: Text("Retry"),
+                          onPressed: () => _generateAIQuiz(context),
+                          icon: Icon(Icons.psychology),
+                          label: Text("Quiz"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ParticipatoryStudyScreen(
+                                  noteSummary: widget.summary,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.group_work),
+                          label: Text("Co-Study"),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,
@@ -265,67 +379,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                         ),
                       ],
                     ),
-                  ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "AI Summary",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _generateAIQuiz(context),
-                        icon: Icon(Icons.psychology),
-                        label: Text("Quiz"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ParticipatoryStudyScreen(
-                                noteSummary: widget.summary,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.group_work),
-                        label: Text("Co-Study"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Divider(),
-                  Expanded(
-                    child: SingleChildScrollView(child: Text(widget.summary)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
