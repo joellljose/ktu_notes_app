@@ -5,7 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dashboard_view.dart';
+
 import 'notes_manager_view.dart';
+import 'pending_notes_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   @override
@@ -14,7 +16,11 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _selectedIndex = 0;
-  final List<Widget> _pages = [DashboardView(), NotesManagerView()];
+  final List<Widget> _pages = [
+    DashboardView(),
+    NotesManagerView(),
+    PendingNotesScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +48,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   icon: Icon(Icons.dashboard),
                   label: "Overview",
                 ),
+
                 BottomNavigationBarItem(
                   icon: Icon(Icons.library_books),
                   label: "Notes",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.pending_actions),
+                  label: "Pending",
                 ),
               ],
             ),
@@ -87,6 +98,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       selectedIcon: Icon(Icons.dashboard, color: Colors.teal),
                       label: Text("Overview"),
                     ),
+
                     NavigationRailDestination(
                       icon: Icon(Icons.library_books, color: Colors.white54),
                       selectedIcon: Icon(
@@ -94,6 +106,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         color: Colors.teal,
                       ),
                       label: Text("Notes"),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.pending_actions, color: Colors.white54),
+                      selectedIcon: Icon(
+                        Icons.pending_actions,
+                        color: Colors.teal,
+                      ),
+                      label: Text("Pending"),
                     ),
                   ],
                   trailing: Expanded(
@@ -246,7 +266,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _sendNotification() async {
     setState(() => _isSending = true);
 
-    const String backendUrl = "https://api-gemini-notes.onrender.com/send-notification";
+    const String backendUrl =
+        "https://api-gemini-notes.onrender.com/send-notification";
 
     try {
       final response = await http.post(

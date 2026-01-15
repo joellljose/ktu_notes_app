@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
@@ -52,6 +53,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
   }
 
   Future<void> _loadFile() async {
+    if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      // On Web and Desktop, we don't download to a file. SfPdfViewer.network handles it.
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _loadingMessage = "Checking storage...";
@@ -267,6 +276,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                           ],
                         ),
                       )
+                    : kIsWeb ||
+                          Platform.isWindows ||
+                          Platform.isLinux ||
+                          Platform.isMacOS
+                    ? SfPdfViewer.network(widget.pdfUrl)
                     : _localPath != null
                     ? SfPdfViewer.file(File(_localPath!))
                     : Center(
@@ -276,7 +290,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                             Icon(
                               Icons.error_outline,
                               size: 48,
-                              color: Colors.amber,
+                              color: const Color.fromARGB(255, 244, 184, 3),
                             ),
                             SizedBox(height: 16),
                             Padding(

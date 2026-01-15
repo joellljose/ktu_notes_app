@@ -11,13 +11,12 @@ import 'admin/admin_dashboard_screen.dart';
 import 'services/user_activity_service.dart';
 import 'services/notification_service.dart';
 
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: kIsWeb
-      
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   UserActivityService().init();
   try {

@@ -13,18 +13,18 @@ class ModuleListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: Text(subject),
           backgroundColor: Colors.teal,
           bottom: TabBar(
             isScrollable: true,
-            tabs: List.generate(6, (i) => Tab(text: "Module ${i + 1}")),
+            tabs: List.generate(5, (i) => Tab(text: "Module ${i + 1}")),
           ),
         ),
         body: TabBarView(
-          children: List.generate(6, (i) {
+          children: List.generate(5, (i) {
             return StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('notes')
