@@ -40,13 +40,13 @@ except Exception as e:
 
 import random
 
-# API_KEYS = [
-#     os.environ.get("GEMINI_API_KEY_1"),
-#     os.environ.get("GEMINI_API_KEY_2"),
-#     os.environ.get("GEMINI_API_KEY_3"),
-#     os.environ.get("GEMINI_API_KEY_4"),
-#     os.environ.get("GEMINI_API_KEY"), # Fallback for legacy support
-# ]
+API_KEYS = [
+    os.environ.get("GEMINI_API_KEY_1"),
+    os.environ.get("GEMINI_API_KEY_2"),
+    os.environ.get("GEMINI_API_KEY_3"),
+    os.environ.get("GEMINI_API_KEY_4"),
+    os.environ.get("GEMINI_API_KEY"), # Fallback for legacy support
+]
 # Filter out None values just in case
 API_KEYS = [k for k in API_KEYS if k]
 
@@ -457,6 +457,19 @@ def send_notification():
         # Send
         response = messaging.send(message)
         print(f"Successfully sent message: {response}")
+        
+        # --- Save to Firestore History ---
+        try:
+            db = firestore.client()
+            db.collection('notifications').add({
+                'title': title,
+                'body': body,
+                'timestamp': firestore.SERVER_TIMESTAMP
+            })
+            print("Notification saved to Firestore history")
+        except Exception as db_error:
+            print(f"Error saving notification to Firestore: {db_error}")
+        # ------------------------------
         
         return jsonify({"success": True, "messageId": response})
 

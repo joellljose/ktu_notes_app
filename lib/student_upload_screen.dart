@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
+import 'package:ai_ktu_notes_app/data/course_data.dart';
 
 class StudentUploadScreen extends StatefulWidget {
   @override
@@ -55,80 +56,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     'Module 3',
     'Module 4',
     'Module 5',
-    'Module 6',
   ];
 
-  // Copied from AdminUploadScreen - ideally this should be in a shared constant file
-  final Map<String, Map<String, List<String>>> courseData = {
-    'Computer Science': {
-      'S1': [
-        'Linear Algebra And Calculus - (MAT101)',
-        'Engineering Physics A - (PHT100)',
-        'Engineering Chemistry - (CYT100)',
-        'Engineering Mechanics - (EST100)',
-        'Engineering Graphics - (EST110)',
-        'Basics Of Civil & Mechanical Engineering - (EST120)',
-        'Basics Of Electrical & Electronics Engineering - (EST130)',
-        'Life Skills - (HUN101)',
-      ],
-      'S2': [
-        'Vector Calculus, Differential Equations And Transforms - (MAT102)',
-        'Engineering Physics A - (PHT100)',
-        'Engineering Chemistry - (CYT100)',
-        'Engineering Mechanics - (EST100)',
-        'Engineering Graphics - (EST110)',
-        'Basics Of Civil & Mechanical Engineering - (EST120)',
-        'Basics Of Electrical & Electronics Engineering - (EST130)',
-        'Professional Communication - (HUN102)',
-        'Programming In C - (EST102)',
-      ],
-      'S3': [
-        'Discrete Mathematical Structures - (MAT203)',
-        'Data Structures - (CST201)',
-        'Logic System Design - (CST203)',
-        'Object Oriented Programming Using Java - (CST205)',
-        'Design And Engineering - (EST200)',
-        'Professional Ethics - (HUT200)',
-        'Sustainable Engineering - (MCN201)',
-      ],
-      'S4': [
-        'Graph Theory - (MAT206)',
-        'Computer Organisation And Architecture - (CST202)',
-        'Database Management Systems - (CST204)',
-        'Operating Systems - (CST206)',
-        'Design And Engineering - (EST200)',
-        'Professional Ethics - (HUT200)',
-        'Constitution Of India - (MCN202)',
-      ],
-      'S5': [
-        'Formal Languages And Automata Theory - (CST301)',
-        'Computer Networks - (CST303)',
-        'System Software - (CST305)',
-        'Microprocessors And Microcontrollers - (CST307)',
-        'Management Of Software Systems - (CST309)',
-        'Disaster Management - (MCN301)',
-      ],
-      'S6': [
-        'Compiler Design - (CST302)',
-        'Computer Graphics And Image Processing - (CST304)',
-        'Algorithm Analysis And Design - (CST306)',
-        'Industrial Economics And Foreign Trade - (HUT300)',
-        'Comprehensive Course Work - (CST308)',
-      ],
-      'S7': [
-        'Artificial Intelligence - (CST401)',
-        'Industrial Safety Engineering - (MCN401)',
-        'Seminar - (CSQ413)',
-        'Project Phase I - (CSD415)',
-      ],
-      'S8': [
-        'Distributed Computing - (CST402)',
-        'Comprehensive Course Viva - (CST404)',
-        'Project Phase II - (CSD416)',
-      ],
-    },
-    // Add other branches if needed, for brevity assuming similar structure or user can select manual subject
-  };
+  // Use the imported courseData from lib/data/course_data.dart instead of local definition
 
   List<String> getAvailableSubjects() {
     if (courseData.containsKey(selectedBranch) &&
@@ -201,7 +131,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       return;
     }
 
-    // Check file size (limit to 10MB)
+   
     try {
       int fileSizeInBytes = await _selectedFile!.length();
       double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
