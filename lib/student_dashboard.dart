@@ -7,7 +7,15 @@ import 'profile_screen.dart';
 import 'community_chat_screen.dart';
 import 'notification_history_screen.dart';
 import 'student_upload_screen.dart';
-
+import 'topic_insights_screen.dart';
+import 'smart_search_screen.dart';
+import 'code_explainer_screen.dart';
+import 'ai_diagram_screen.dart';
+import 'ai_doubt_chatbot_screen.dart';
+import 'note_detail_screen.dart';
+import 'favorites_screen.dart';
+import 'ai_summarizer_screen.dart';
+import 'subscription_screen.dart';
 class StudentDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -33,33 +41,78 @@ class StudentDashboard extends StatelessWidget {
         backgroundColor: Colors.teal,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
-            tooltip: "Notifications",
+            icon: const Icon(Icons.search, size: 22),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationHistoryScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => SmartSearchScreen()),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle, size: 28),
-            tooltip: "My Profile",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen()),
-              );
-            },
-          ),
-
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.teal),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.account_circle, size: 60, color: Colors.white),
+                  SizedBox(height: 10),
+                  Text(
+                    user.email ?? "Student",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text("My Profile"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen()));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.notifications, size: 20),
+              title: Text("Notifications"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationHistoryScreen()));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.favorite, size: 20, color: Colors.redAccent),
+              title: Text("My Favorites"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => FavoritesScreen()));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.stars, size: 20, color: Colors.orange),
+              title: Text("Subscription Details"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen()));
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.red),
+              title: Text("Logout", style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                FirebaseAuth.instance.signOut();
+              },
+            ),
+          ],
+        ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -91,45 +144,226 @@ class StudentDashboard extends StatelessWidget {
           var userData = userSnapshot.data!.data() as Map<String, dynamic>;
           String branch = userData['branch'] ?? "Not Set";
           String semester = userData['semester'] ?? "Not Set";
+          bool isSubscribed = userData['isSubscribed'] ?? false;
+          if (isSubscribed && userData['subscriptionExpiry'] != null) {
+            Timestamp expiry = userData['subscriptionExpiry'];
+            if (DateTime.now().isAfter(expiry.toDate())) {
+              isSubscribed = false;
+            }
+          }
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with Branch/Sem info
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16),
-                color: Colors.teal.withOpacity(0.1),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.05),
+                  border: Border(bottom: BorderSide(color: Colors.teal.withOpacity(0.1))),
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Icon(Icons.school, color: Colors.teal, size: 16),
+                    SizedBox(width: 8),
                     Text(
                       "$semester | $branch",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.teal,
+                        fontSize: 13,
+                        color: Colors.teal.shade700,
                       ),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chat, color: Colors.teal),
-                          tooltip: "Class Chat",
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CommunityChatScreen(
-                                  branch: branch,
-                                  semester: semester,
+                  ],
+                ),
+              ),
+
+              // AI Toolkit Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  "AI Discovery Tools",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                ),
+              ),
+              
+              SizedBox(
+                height: 100,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    _buildToolCard(
+                      context, 
+                      "Summarizer", 
+                      Icons.summarize_outlined, 
+                      Colors.teal,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => AiSummarizerScreen())),
+                      isPremiumOnly: true,
+                      isSubscribed: isSubscribed,
+                    ),
+                    _buildToolCard(
+                      context, 
+                      "Smart Search", 
+                      Icons.search, 
+                      Colors.teal,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => SmartSearchScreen())),
+                      isPremiumOnly: true,
+                      isSubscribed: isSubscribed,
+                    ),
+                    _buildToolCard(
+                      context, 
+                      "Doubt Chat", 
+                      Icons.psychology_alt, 
+                      Colors.indigo,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => AiDoubtChatbotScreen(branch: branch, semester: semester))),
+                      isPremiumOnly: true,
+                      isSubscribed: isSubscribed,
+                    ),
+                    _buildToolCard(
+                      context, 
+                      "Diagrams", 
+                      Icons.schema_outlined, 
+                      Colors.blue,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => AiDiagramScreen())),
+                      isPremiumOnly: true,
+                      isSubscribed: isSubscribed,
+                    ),
+                    _buildToolCard(
+                      context, 
+                      "Insights", 
+                      Icons.lightbulb_outline, 
+                      Colors.orange,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => TopicInsightsScreen())),
+                      isPremiumOnly: true,
+                      isSubscribed: isSubscribed,
+                    ),
+                    _buildToolCard(
+                      context, 
+                      "Class Chat", 
+                      Icons.chat_bubble_outline, 
+                      Colors.teal,
+                      () => Navigator.push(context, MaterialPageRoute(builder: (context) => CommunityChatScreen(branch: branch, semester: semester))),
+                    ),
+                    if (branch == 'Computer Science')
+                      _buildToolCard(
+                        context, 
+                        "Explainer", 
+                        Icons.code, 
+                        Colors.deepPurple,
+                        () => Navigator.push(context, MaterialPageRoute(builder: (context) => CodeExplainerScreen())),
+                        isPremiumOnly: true,
+                        isSubscribed: isSubscribed,
+                      ),
+                  ],
+                ),
+              ),
+
+              // Saved Notes Section (Horizontal Scroll)
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .collection('favorites')
+                    .orderBy('timestamp', descending: true)
+                    .limit(10)
+                    .snapshots(),
+                builder: (context, favSnapshot) {
+                  if (!favSnapshot.hasData || favSnapshot.data!.docs.isEmpty) {
+                    return SizedBox.shrink();
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Saved Notes ❤️",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
+                              },
+                              child: const Text("VIEW ALL", style: TextStyle(fontSize: 12, color: Colors.teal)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 120,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: favSnapshot.data!.docs.length,
+                          itemBuilder: (context, index) {
+                            var data = favSnapshot.data!.docs[index].data() as Map<String, dynamic>;
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(
+                                    builder: (context) => NoteDetailScreen(
+                                      title: data['title'] ?? 'Note',
+                                      pdfUrl: data['pdfUrl'] ?? '',
+                                      summary: data['summary'] ?? '',
+                                    )
+                                  )
+                                );
+                              },
+                              child: Container(
+                                width: 140,
+                                margin: EdgeInsets.symmetric(horizontal: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.teal.withOpacity(0.1)),
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: Offset(0, 2))
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 20),
+                                      SizedBox(height: 8),
+                                      Expanded(
+                                        child: Text(
+                                          data['title'] ?? 'Note',
+                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Saved",
+                                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
                           },
                         ),
-                        const Icon(Icons.school, color: Colors.teal, size: 20),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  );
+                }
+              ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                child: Text(
+                  "Your Subjects",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal.shade900),
                 ),
               ),
 
@@ -233,6 +467,71 @@ class StudentDashboard extends StatelessWidget {
         icon: const Icon(Icons.upload_file),
         label: const Text("Upload Note"),
         backgroundColor: Colors.teal,
+      ),
+    );
+  }
+
+  Widget _buildToolCard(
+      BuildContext context, String label, IconData icon, Color color, VoidCallback onTap,
+      {bool isPremiumOnly = false, bool isSubscribed = false}) {
+    bool isLocked = isPremiumOnly && !isSubscribed;
+    
+    return GestureDetector(
+      onTap: () {
+        if (isLocked) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SubscriptionScreen()),
+          );
+        } else {
+          onTap();
+        }
+      },
+      child: Container(
+        width: 80,
+        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            )
+          ],
+          border: Border.all(color: color.withOpacity(0.05)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Opacity(
+              opacity: isLocked ? 0.4 : 1.0,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 22),
+                  SizedBox(height: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: color is MaterialColor ? color.shade700 : color,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            if (isLocked)
+              const Positioned(
+                top: 5,
+                right: 5,
+                child: Icon(Icons.lock, size: 16, color: Colors.orange),
+              ),
+          ],
+        ),
       ),
     );
   }

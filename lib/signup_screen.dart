@@ -103,6 +103,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             'branch': selectedBranch,
                             'semester': selectedSem,
                             'role': 'student',
+                            'isSubscribed': false,
                           });
 
                       Navigator.pop(context);

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Report - AI KTU Notes App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Mermaid CDN for Diagrams -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #00796b;
+            --primary-light: #48a999;
+            --secondary: #004c40;
+            --accent: #f59e0b;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 60px 80px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-light);
+            margin-top: 10px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-top: 60px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 30px;
+            background: var(--accent);
+            margin-right: 15px;
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-weight: 300;
+            font-size: 1.1rem;
+            text-align: justify;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        li {
+            padding-left: 32px;
+            position: relative;
+            margin-bottom: 15px;
+            font-weight: 300;
+            font-size: 1.05rem;
+        }
+
+        li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .tech-card {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-light);
+        }
+
+        .tech-card h4 {
+            margin: 0 0 12px 0;
+            color: var(--secondary);
+            font-size: 1.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .diagram-container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .screenshot-item {
+            text-align: center;
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .screenshot-item p {
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .literature-box {
+            background: #f1f5f9;
+            padding: 20px 30px;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary);
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+            h2 { page-break-before: always; }
+            .tech-card, .diagram-container, .screenshot-item img { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 1rem;
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI KTU Notes App</h1>
+            <div class="subtitle">A Smart Educational Ecosystem for KTU Students</div>
+        </header>
+
+        <section>
+            <h2>1. Abstract</h2>
+            <p>The <strong>AI KTU Notes App</strong> is a modern educational platform built for students under the APJ Abdul Kalam Technological University (KTU). By integrating Google's Gemini Large Language Model, the application moves beyond traditional static document storage. It provides a suite of intelligent tools including RAG-based chatbots, auto-summarizers, and visual generators that facilitate active learning and deep conceptual understanding.</p>
+        </section>
+
+        <section>
+            <h2>2. Introduction</h2>
+            <p>Students today have access to vast amounts of digital study material, yet the efficiency of learning hasn't kept pace. Most platforms act as simple file repositories. This project aims to bridge the gap between "having the notes" and "understanding the context" by using AI agents that can read, interpret, and explain complex academic content in real-time.</p>
+        </section>
+
+        <section>
+            <h2>3. Objectives</h2>
+            <ul>
+                <li><strong>Centralized Access:</strong> Provide a unified portal for all KTU branch and semester notes.</li>
+                <li><strong>Cognitive Offloading:</strong> Use AI Summarization to reduce the time spent reading irrelevant sections.</li>
+                <li><strong>Interactive Tutoring:</strong> Deploy a 24/7 AI Chatbot for instant clarification of doubts.</li>
+                <li><strong>Visual Synthesis:</strong> Automatically convert textual processes into interactive diagrams.</li>
+                <li><strong>Knowledge Assessment:</strong> Enable auto-generation of quizzes for self-evaluation.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>4. Existing Systems</h2>
+            <p>Current platforms used by KTU students primarily include Telegram bots (like KTU Assist), static websites (Keralanotes, KTU Management), and shared Google Drives. While these provide the raw data, they share several common drawbacks:</p>
+            <ul>
+                <li><strong>Manual Search:</strong> Students must dig through hierarchies to find a specific topic.</li>
+                <li><strong>No Interactivity:</strong> Static PDFs cannot answer follow-up questions or adapt to the user's pace.</li>
+                <li><strong>Passive Learning:</strong> Reading through 100+ pages of notes often leads to cognitive fatigue without active recall tools.</li>
+                <li><strong>Inconsistent Quality:</strong> Materials are often unorganized or lack clear summaries.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. Literature Survey</h2>
+            <div class="literature-box">
+                "The integration of Large Language Models (LLMs) in EdTech has transitioned from simple text generation to Retrieval-Augmented Generation (RAG), which allows AI to provide factual, context-specific answers from a trusted knowledge base." (Modern EdTech Trends, 2025)
+            </div>
+            <p>Surveys of current educational tools highlight that students prefer modular, bite-sized content over long-form text. Platforms like Notion AI and Otter.ai have shown that AI-summarized transcription significantly improves retention. In the specific context of KTU, which follows a rigorous engineering syllabus, the need for "conceptual visualization" and "logical code explanations" is paramount.</p>
+        </section>
+
+        <section>
+            <h2>6. Problem Statement</h2>
+            <p>KTU students face a high-density curriculum where traditional study methods are often time-consuming. There is a lack of a "smart" companion that can distill complex engineering concepts into simple explanations, generate visual aids on-demand, and provide a branch-specific filtered experience. The existing fragmentation of resources leads to significant time loss during exam preparation.</p>
+        </section>
+
+        <section>
+            <h2>7. Overall Architecture</h2>
+            <p>The system is built on a distributed cloud architecture. The Flutter frontend communicates with Firebase for user data and storage, while a specialized AI Backend handles the heavy lifting of document processing and LLM interaction.</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph TD
+                        User([Student / Admin]) --> Flutter[Flutter Mobile App]
+                        subgraph "Cloud Backend"
+                            Auth[Firebase Auth]
+                            DB[(Firestore NoSQL)]
+                            Storage[Firebase Storage]
+                        end
+                        Flutter --> Auth
+                        Flutter --> DB
+                        Flutter --> Storage
+                        
+                        subgraph "AI Core"
+                            AI_Middleware[Custom AI Backend]
+                            Gemini[Google Gemini 1.5 Pro]
+                        end
+                        Flutter -->|JSON Requests| AI_Middleware
+                        AI_Middleware -->|Contextual Prompts| Gemini
+                        Gemini -->|AI Response| AI_Middleware
+                        AI_Middleware -->|Formatted Result| Flutter
+                </div>
+                <p><strong>Figure 1:</strong> System Architecture Overview</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>8. Module Description</h2>
+            <ul>
+                <li><strong>Authentication Module:</strong> Handles secure login and signup using Firebase, with branch and semester profiling.</li>
+                <li><strong>Library Module:</strong> A hierarchical system to organize notes by Semester -> Subject -> Module.</li>
+                <li><strong>AI Summarization Engine:</strong> Uses NLP to extract core concepts and present them in three granularity levels.</li>
+                <li><strong>RAG Doubt Solver:</strong> Combines the prompt with the PDF's text embeddings to ensure AI answers are strictly based on the provided notes.</li>
+                <li><strong>Diagram Visualizer:</strong> Maps textual logic to Mermaid.js code, rendered via a mobile WebView.</li>
+                <li><strong>Community & Chat:</strong> Real-time peer-to-peer messaging for collaborative learning.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>9. Data Flow Diagram (DFD)</h2>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    graph LR
+                        A[User] -->|Upload Note| B[Mobile App]
+                        B -->|Binary Data| C[Firebase Storage]
+                        B -->|Metadata| D[Firestore]
+                        A -->|Ask Question| B
+                        B -->|Query + FileID| E[AI Backend]
+                        E -->|Fetch Context| C
+                        E -->|Prompt Engineering| F[Gemini API]
+                        F -->|Generated Answer| E
+                        E -->|JSON Response| B
+                        B -->|Render UI| A
+                </div>
+                <p><strong>Figure 2:</strong> Top-Level Data Flow</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>10. Tools and Technologies</h2>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <span class="badge">Development</span>
+                    <h4>Flutter & Dart</h4>
+                    <p>Primary framework for UI and application logic across Android and iOS.</p>
+                </div>
+                <div class="tech-card">
+                    <span class="badge">Cloud</span>
+                    <h4>Firebase</h4>
+                    <p>Infrastructure for Real-time DB, File Hosting, and Authentication.</p>
+                </div>
+                <div class="tech-card">
+                    <span class="badge">Intelligence</span>
+                    <h4>Google Gemini</h4>
+                    <p>Core AI model for summarization, chat, and diagram generation.</p>
+                </div>
+                <div class="tech-card">
+                    <span class="badge">Backend</span>
+                    <h4>Python / FAST API</h4>
+                    <p>High-performance middleware for PDF processing and AI connection.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>11. Screenshots (UI Mockups)</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <img src="C:\Users\joelj\.gemini\antigravity\brain\bf56ebdc-d482-4260-a2fe-a646109c1cad\dashboard_mockup_1774095940579.png" alt="Dashboard">
+                    <p>Slide 1: Student Dashboard with AI Hub</p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="C:\Users\joelj\.gemini\antigravity\brain\bf56ebdc-d482-4260-a2fe-a646109c1cad\chatbot_mockup_1774095958143.png" alt="AI Chatbot">
+                    <p>Slide 2: Interactive AI Doubt Solver</p>
+                </div>
+            </div>
+            <p><em>Slide 3: Note Summarizer & PDF Viewer (Description: A split-screen interface where the top displays the original PDF and the bottom generates elegant, bulleted AI summaries with length adjustment toggles.)</em></p>
+        </section>
+
+        <section>
+            <h2>12. Conclusion & Future Enhancements</h2>
+            <p>The AI KTU Notes App represents the future of study portals—moving from static to agentic. It significantly reduces the friction of learning technical subjects and provides a centralized community for KTU students.</p>
+            <h3>Future Enhancements:</h3>
+            <ul>
+                <li><strong>Voice-to-Note:</strong> Real-time transcription and summarization of classroom lectures.</li>
+                <li><strong>AR Diagram Overlay:</strong> Visualizing 3D engineering diagrams from 2D notes using AR.</li>
+                <li><strong>Predictive Analysis:</strong> Suggesting topics to study based on previous year trends and user's weak points.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>13. References</h2>
+            <ul>
+                <li>Google Gemini API Documentation - Generative AI in the Cloud.</li>
+                <li>Flutter Documentation - High performance cross-platform development.</li>
+                <li>APJ Abdul Kalam Technological University (KTU) Official Course Syllabi.</li>
+                <li>"Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", Lewis et al., 2020.</li>
+            </ul>
+        </section>
+
+        <footer>
+            Project Report Generated &bull; 2026 &bull; AI KTU Notes App
+        </footer>
+    </div>
+</body>
+</html>

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../services/api_config.dart';
 
 class NotesManagerView extends StatefulWidget {
   @override
@@ -293,7 +294,7 @@ class _NotesManagerViewState extends State<NotesManagerView> {
     try {
       // Use 10.0.2.2 for emulator, localhost or IP for web/device
       var uri = Uri.parse(
-        'https://api-gemini-notes.onrender.com/generate-summary',
+        ApiConfig.generateSummary,
       );
       var response = await http.post(
         uri,

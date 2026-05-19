@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'services/api_config.dart';
 
 class CommunityChatScreen extends StatefulWidget {
   final String branch;
@@ -20,12 +23,58 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
+  bool _isSending = false;
 
   void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
+    final rawText = _messageController.text.trim();
+    if (rawText.isEmpty || _isSending) return;
 
-    String message = _messageController.text.trim();
+    setState(() => _isSending = true);
+
+    // AI Moderation Step
+    try {
+      // Fetch recent history for context
+      String chatId = "${widget.branch}_${widget.semester}";
+      final historySnapshot = await FirebaseFirestore.instance
+          .collection('classrooms')
+          .doc(chatId)
+          .collection('messages')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+      
+      final history = historySnapshot.docs
+          .map((doc) => doc['text'] as String)
+          .toList()
+          .reversed
+          .toList();
+
+      final modResponse = await http.post(
+        Uri.parse(ApiConfig.moderateMessage),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'message': rawText,
+          'history': history,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      if (modResponse.statusCode == 200) {
+        final modData = jsonDecode(modResponse.body);
+        if (modData['is_academic'] == false) {
+          setState(() => _isSending = false);
+          _showModerationWarning(modData['warning_reason'] ?? "Please keep discussions academic.");
+          return;
+        }
+      }
+    } catch (e) {
+      print("Moderation service unavailable: $e. Proceeding...");
+    }
+
+    String message = rawText;
     _messageController.clear();
+
+    // Dismiss the keyboard
+    FocusScope.of(context).unfocus();
 
     
     
@@ -53,7 +102,56 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       }
     } catch (e) {
       print("Error sending message: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
+  }
+
+  void _showModerationWarning(String reason) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 10),
+            Text("Class Chat Rule"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "This chat is strictly for academic purposes and study-related doubts.",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.orange.shade100),
+              ),
+              child: Text(
+                reason,
+                style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("I Understand", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -179,8 +277,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   radius: 24,
                   backgroundColor: Colors.teal,
                   child: IconButton(
-                    icon: Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
+                    icon: _isSending 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.send, color: Colors.white),
+                    onPressed: _isSending ? null : _sendMessage,
                   ),
                 ),
               ],

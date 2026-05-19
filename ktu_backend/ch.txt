@@ -259,38 +259,10 @@ def extract_text_from_url(url):
     except Exception as e:
         raise Exception(f"Failed to extract text from PDF: {str(e)}")
 
-def verify_subscription(data):
-    user_id = data.get('userId')
-    if not user_id:
-        print("No userId provided in request")
-        return False
-    try:
-        db = firestore.client()
-        doc = db.collection('users').document(user_id).get()
-        if doc.exists:
-            user_data = doc.to_dict()
-            is_subscribed = user_data.get('isSubscribed', False)
-            if is_subscribed:
-                expiry = user_data.get('subscriptionExpiry')
-                if expiry:
-                    import datetime
-                    # Ensure timezone-aware comparison depending on Firestore python SDK behavior
-                    now = datetime.datetime.now(datetime.timezone.utc)
-                    if now > expiry:
-                        return False
-            return is_subscribed
-        return False
-    except Exception as e:
-        print(f"Auth Check Error: {e}")
-        return False
-
 @app.route('/generate-quiz', methods=['POST'])
 def generate_quiz():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         input_text = data.get('text', '')
         pdf_url = data.get('url', '')
         source_text = ""
@@ -336,9 +308,6 @@ def generate_quiz():
 def generate_summary():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         pdf_url = data.get('url', '')
         length = data.get('length', 'medium') 
         subject = data.get('subject', 'General Study Material')
@@ -382,9 +351,6 @@ def generate_summary():
 def generate_topic_points():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         topic = data.get('topic', '').strip()
         subject = data.get('subject', '')
         branch = data.get('branch', '')
@@ -418,9 +384,6 @@ def generate_topic_points():
 def smart_search():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         query = data.get('query', '').strip()
         branch = data.get('branch', '')
         semester = data.get('semester', '')
@@ -558,9 +521,6 @@ def smart_search():
 def explain_code():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         code = data.get('code', '').strip()
         if not code:
             return jsonify({"error": "No code provided"}), 400
@@ -590,9 +550,6 @@ def explain_code():
 def participatory_start():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         input_text = data.get('text', '')
         model = get_configured_model()
         prompt = f"""
@@ -619,9 +576,6 @@ def participatory_start():
 def participatory_evaluate():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         original_text = data.get('text', '')
         student_answer = data.get('answer', '')
         student_question = data.get('question', '')
@@ -651,9 +605,6 @@ def participatory_evaluate():
 def generate_diagram():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         topic = data.get('topic', '').strip()
         subject = data.get('subject', '')
         branch = data.get('branch', '')
@@ -689,9 +640,6 @@ def generate_diagram():
 def ask_doubt():
     try:
         data = request.get_json()
-        if not verify_subscription(data):
-            return jsonify({"error": "Premium subscription required"}), 403
-            
         query = data.get('query', '').strip()
         history = data.get('history', [])
         branch = data.get('branch', '')

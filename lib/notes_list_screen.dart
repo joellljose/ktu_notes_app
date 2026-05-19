@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:crypto/crypto.dart';
 import 'note_detail_screen.dart';
 import 'student_upload_screen.dart';
 
@@ -66,6 +68,32 @@ class _NotesListScreenState extends State<NotesListScreen> {
     }
   }
 
+  Future<void> _toggleFavorite(Map<String, dynamic> noteData) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    final docId = md5.convert(utf8.encode(noteData['url'] ?? '')).toString();
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(docId);
+
+    final doc = await ref.get();
+    if (doc.exists) {
+      await ref.delete();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Removed from Favorites")));
+    } else {
+      await ref.set({
+        'title': noteData['title'],
+        'pdfUrl': noteData['url'],
+        'summary': noteData['summary'],
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Added to Favorites ❤️")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,114 +135,115 @@ class _NotesListScreenState extends State<NotesListScreen> {
               return ListView.builder(
                 itemCount: notes.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: const Icon(Icons.description, color: Colors.teal),
-                    title: Text(notes[index]['title']),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("AI Summary Available"),
-                        SizedBox(height: 4),
-                        if (notes[index]['verifiedBy'] != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: notes[index]['verifiedBy'] == 'AI'
-                                  ? Colors.purple[50]
-                                  : Colors.green[50],
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: notes[index]['verifiedBy'] == 'AI'
-                                    ? Colors.purple
-                                    : Colors.green,
-                                width: 0.5,
+                  var noteDoc = notes[index];
+                  var noteData = noteDoc.data() as Map<String, dynamic>;
+                  final noteId = md5.convert(utf8.encode(noteData['url'] ?? '')).toString();
+
+                  return StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .collection('favorites')
+                        .doc(noteId)
+                        .snapshots(),
+                    builder: (context, favSnapshot) {
+                      bool isFav = favSnapshot.hasData && favSnapshot.data!.exists;
+
+                      return ListTile(
+                        leading: const Icon(Icons.description, color: Colors.teal, size: 20),
+                        title: Text(noteData['title'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("AI Summary Available", style: TextStyle(fontSize: 12)),
+                            const SizedBox(height: 4),
+                            if (noteData['verifiedBy'] != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: noteData['verifiedBy'] == 'AI' ? Colors.purple[50] : Colors.green[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: noteData['verifiedBy'] == 'AI' ? Colors.purple : Colors.green,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  "Verified by ${noteData['verifiedBy']}",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: noteData['verifiedBy'] == 'AI' ? Colors.purple : Colors.green[800],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NoteDetailScreen(
+                                title: noteData['title'],
+                                pdfUrl: noteData['url'],
+                                summary: noteData['summary'],
                               ),
                             ),
-                            child: Text(
-                              "Verified by ${notes[index]['verifiedBy']}",
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: notes[index]['verifiedBy'] == 'AI'
-                                    ? Colors.purple
-                                    : Colors.green[800],
-                                fontWeight: FontWeight.bold,
+                          );
+                        },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: isFav ? Colors.redAccent : Colors.grey,
+                                size: 18,
                               ),
+                              onPressed: () => _toggleFavorite(noteData),
                             ),
-                          ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NoteDetailScreen(
-                            title: notes[index]['title'],
-                            pdfUrl: notes[index]['url'],
-                            summary: notes[index]['summary'],
-                          ),
+                            IconButton(
+                              icon: const Icon(Icons.visibility_outlined, color: Colors.teal, size: 18),
+                              tooltip: 'View AI Summary',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: Row(
+                                      children: [
+                                        Icon(Icons.auto_awesome, color: Colors.purple, size: 20),
+                                        SizedBox(width: 8),
+                                        const Expanded(child: Text("AI Summary", style: TextStyle(fontSize: 18))),
+                                      ],
+                                    ),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            noteData['title'],
+                                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                                          ),
+                                          const Divider(),
+                                          Text(
+                                            noteData['summary'] ?? "No summary available.",
+                                            style: const TextStyle(fontSize: 15, height: 1.5),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(context), child: const Text("Close")),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       );
                     },
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.visibility_outlined,
-                        color: Colors.teal,
-                      ),
-                      tooltip: 'View AI Summary',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: Colors.purple,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "AI Summary",
-                                    style: TextStyle(fontSize: 18),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    notes[index]['title'],
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  Divider(),
-                                  Text(
-                                    notes[index]['summary'] ??
-                                        "No summary available.",
-                                    style: TextStyle(fontSize: 15, height: 1.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Close"),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
                   );
                 },
               );

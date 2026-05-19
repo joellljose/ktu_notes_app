@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'services/api_config.dart';
 
 class ParticipatoryStudyScreen extends StatefulWidget {
   final String noteSummary;
@@ -40,10 +42,13 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
   Future<void> _startSession() async {
     try {
       final response = await http.post(
-        Uri.parse('https://api-gemini-notes.onrender.com/participatory-start'),
+        Uri.parse(ApiConfig.participatoryStart),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'text': widget.noteSummary}),
-      );
+        body: json.encode({
+          'text': widget.noteSummary,
+          'userId': FirebaseAuth.instance.currentUser?.uid,
+        }),
+      ).timeout(const Duration(seconds: 300));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -67,7 +72,7 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
     try {
       final response = await http.post(
         Uri.parse(
-          'https://api-gemini-notes.onrender.com/participatory-evaluate',
+          ApiConfig.participatoryEvaluate,
         ),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -75,8 +80,9 @@ class _ParticipatoryStudyScreenState extends State<ParticipatoryStudyScreen> {
           'answer': _answerController.text,
           'question': _questionController.text,
           'challenge': _challenge,
+          'userId': FirebaseAuth.instance.currentUser?.uid,
         }),
-      );
+      ).timeout(const Duration(seconds: 300));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

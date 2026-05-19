@@ -1,0 +1,5 @@
+first run the start.bat using : start_all.bat 
+
+then run gemma model : ollama run gemma:2b
+
+then run ngrok on 8000 : ngrok http 8000

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../services/api_config.dart';
 import 'dashboard_view.dart';
 
 import 'notes_manager_view.dart';
@@ -266,8 +267,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _sendNotification() async {
     setState(() => _isSending = true);
 
-    const String backendUrl =
-        "https://api-gemini-notes.onrender.com/send-notification";
+    final String backendUrl = ApiConfig.sendNotification;
 
     try {
       final response = await http.post(

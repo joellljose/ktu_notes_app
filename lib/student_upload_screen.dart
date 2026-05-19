@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'services/api_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:ai_ktu_notes_app/data/course_data.dart';
 
@@ -124,6 +125,10 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
   Future<void> _uploadNote() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Dismiss the keyboard
+    FocusScope.of(context).unfocus();
+
     if (_selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please attach a file (PDF or Scan)")),
@@ -160,7 +165,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           : _subjectController.text.trim();
 
       // Use Backend for Verification & Drive Upload
-      var uri = Uri.parse('https://api-gemini-notes.onrender.com/verify-note');
+      var uri = Uri.parse(ApiConfig.verifyNote);
 
       var request = http.MultipartRequest('POST', uri);
 
@@ -181,7 +186,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
       // Add timeout to the request
       var streamedResponse = await request.send().timeout(
-        Duration(seconds: 60),
+        Duration(seconds: 300),
         onTimeout: () {
           throw Exception("Connection timed out. Please try again.");
         },

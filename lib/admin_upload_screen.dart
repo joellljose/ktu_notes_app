@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'dart:convert';
 import 'package:ai_ktu_notes_app/data/course_data.dart' as course_data;
+import 'services/api_config.dart';
 
 class AdminUploadScreen extends StatefulWidget {
   @override
@@ -65,12 +66,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     try {
       // Use your computer's IP (for emulator use 10.0.2.2, for physical device use your local IP)
       // Since this is a separate backend file running on 5001
-      final apiUrl = Uri.parse(
-        'https://summary-backend-ae35.onrender.com/generate-summary',
-      );
-
       final response = await http.post(
-        apiUrl,
+        Uri.parse(ApiConfig.generateSummary),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'subject': finalSubject,
@@ -78,7 +75,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           'semester': selectedSem,
           'branch': selectedBranch,
         }),
-      );
+      ).timeout(const Duration(seconds: 300));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

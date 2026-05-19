@@ -8,7 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'quiz_screen.dart';
 import 'participatory_study_screen.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'services/api_config.dart';
+import 'subscription_screen.dart';
 class NoteDetailScreen extends StatefulWidget {
   final String title, pdfUrl, summary;
 
@@ -27,13 +32,21 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
   String? _localPath;
   bool _isLoading = true;
   bool _isFullScreen = false;
+  bool _isReadingMode = false;
   String _loadingMessage = "Initializing...";
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  bool _isFavorite = false;
+  final String _uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+  String _currentSummary = "";
+  String _selectedLength = 'medium';
+  bool _isFetchingSummary = false;
+  bool _isSubscribed = false;
 
   @override
   void initState() {
     super.initState();
+    _currentSummary = widget.summary;
     _controller = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1000),
@@ -43,7 +56,82 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
       end: 1.2,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
+    _checkFavoriteStatus();
+    _fetchSubscriptionStatus();
     _loadFile();
+  }
+
+  Future<void> _fetchSubscriptionStatus() async {
+    if (_uid.isEmpty) return;
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(_uid).get();
+      if (mounted) {
+        setState(() {
+          _isSubscribed = doc.data()?['isSubscribed'] ?? false;
+          if (_isSubscribed && doc.data()?['subscriptionExpiry'] != null) {
+            Timestamp expiry = doc.data()?['subscriptionExpiry'];
+            if (DateTime.now().isAfter(expiry.toDate())) {
+              _isSubscribed = false;
+            }
+          }
+        });
+      }
+    } catch (e) {
+      print("Error fetching subscription status: \$e");
+    }
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    if (_uid.isEmpty) return;
+    final docId = md5.convert(utf8.encode(widget.pdfUrl)).toString();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_uid)
+        .collection('favorites')
+        .doc(docId)
+        .get();
+
+    if (mounted) {
+      setState(() {
+        _isFavorite = doc.exists;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_uid.isEmpty) return;
+    final docId = md5.convert(utf8.encode(widget.pdfUrl)).toString();
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_uid)
+        .collection('favorites')
+        .doc(docId);
+
+    try {
+      if (_isFavorite) {
+        await ref.delete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Removed from Favorites")),
+        );
+      } else {
+        await ref.set({
+          'title': widget.title,
+          'pdfUrl': widget.pdfUrl,
+          'summary': widget.summary,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Added to Favorites ❤️")),
+        );
+      }
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
   }
 
   @override
@@ -131,7 +219,51 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
     }
   }
 
+  Future<void> _fetchSummary(String length, StateSetter dialogState) async {
+    if (widget.pdfUrl.isEmpty) return;
+    
+    dialogState(() {
+      _isFetchingSummary = true;
+      _selectedLength = length;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.generateSummary),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'url': widget.pdfUrl,
+          'length': length,
+          'userId': FirebaseAuth.instance.currentUser?.uid,
+        }),
+      ).timeout(const Duration(seconds: 300));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            _currentSummary = data['summary'];
+          });
+          dialogState(() {}); // Refresh dialog
+        }
+      }
+    } catch (e) {
+      print("Error fetching summary: $e");
+    } finally {
+      if (mounted) {
+        dialogState(() {
+          _isFetchingSummary = false;
+        });
+      }
+    }
+  }
+
   Future<void> _generateAIQuiz(BuildContext context) async {
+    if (!_isSubscribed) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionScreen()));
+      return;
+    }
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -141,11 +273,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('https://api-gemini-notes.onrender.com/generate-quiz'),
+        Uri.parse(ApiConfig.generateQuiz),
         headers: {'Content-Type': 'application/json'},
 
-        body: json.encode({'text': widget.summary}),
-      );
+        body: json.encode({
+          'text': widget.summary,
+          'userId': FirebaseAuth.instance.currentUser?.uid,
+        }),
+      ).timeout(const Duration(seconds: 300));
 
       Navigator.pop(context);
 
@@ -190,39 +325,112 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
               backgroundColor: Colors.teal,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.visibility, color: Colors.white),
+                  icon: const Icon(Icons.visibility, color: Colors.white, size: 22),
                   tooltip: 'View Summary',
                   onPressed: () {
+                    if (!_isSubscribed) {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionScreen()));
+                      return;
+                    }
                     showDialog(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: Row(
-                          children: [
-                            Icon(
-                              Icons.auto_awesome,
-                              color: Colors.purple,
-                              size: 20,
+                      builder: (context) => StatefulBuilder(
+                        builder: (context, setDialogState) {
+                          return AlertDialog(
+                            title: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Colors.purple, size: 20),
+                                const SizedBox(width: 8),
+                                const Expanded(child: Text("AI Summary Insights")),
+                                if (_isFetchingSummary)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
+                                  ),
+                              ],
                             ),
-                            SizedBox(width: 8),
-                            Text("AI Summary"),
-                          ],
-                        ),
-                        content: SingleChildScrollView(
-                          child: Text(
-                            widget.summary.isNotEmpty
-                                ? widget.summary
-                                : "No summary available.",
-                            style: TextStyle(fontSize: 15, height: 1.5),
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Close"),
-                          ),
-                        ],
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("Select Summary Depth:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                    const SizedBox(height: 10),
+                                    Center(
+                                      child: SegmentedButton<String>(
+                                        segments: const [
+                                          ButtonSegment(value: 'short', label: Text("Short", style: TextStyle(fontSize: 11))),
+                                          ButtonSegment(value: 'medium', label: Text("Mid", style: TextStyle(fontSize: 11))),
+                                          ButtonSegment(value: 'detailed', label: Text("Full", style: TextStyle(fontSize: 11))),
+                                        ],
+                                        selected: {_selectedLength},
+                                        onSelectionChanged: (newSelection) {
+                                          _fetchSummary(newSelection.first, setDialogState);
+                                        },
+                                        style: SegmentedButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          visualDensity: VisualDensity.compact,
+                                          selectedBackgroundColor: Colors.purple.withOpacity(0.1),
+                                          selectedForegroundColor: Colors.purple,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 15),
+                                    const Divider(),
+                                    const SizedBox(height: 10),
+                                    MarkdownBody(
+                                      data: _currentSummary.isNotEmpty ? _currentSummary : "No summary available.",
+                                      styleSheet: MarkdownStyleSheet(
+                                        p: const TextStyle(fontSize: 14, height: 1.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("Close"),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     );
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: _isFavorite ? Colors.redAccent : Colors.white,
+                    size: 22,
+                  ),
+                  tooltip: _isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                  onPressed: _toggleFavorite,
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isReadingMode ? Icons.light_mode : Icons.dark_mode,
+                    color: _isReadingMode ? Colors.amber : Colors.white,
+                    size: 22,
+                  ),
+                  tooltip: _isReadingMode ? 'Disable Reading Mode' : 'Enable Focus Reading Mode',
+                  onPressed: () {
+                    setState(() {
+                      _isReadingMode = !_isReadingMode;
+                      if (_isReadingMode) {
+                        _isFullScreen = true; // Auto-fullscreen for focus
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text("Focus Reading Mode Enabled 🌙"),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: Colors.grey[900],
+                        ));
+                      }
+                    });
                   },
                 ),
               ],
@@ -280,9 +488,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                           Platform.isWindows ||
                           Platform.isLinux ||
                           Platform.isMacOS
-                    ? SfPdfViewer.network(widget.pdfUrl)
+                    ? _buildPdfViewer(SfPdfViewer.network(widget.pdfUrl))
                     : _localPath != null
-                    ? SfPdfViewer.file(File(_localPath!))
+                    ? _buildPdfViewer(SfPdfViewer.file(File(_localPath!)))
                     : Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -375,6 +583,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
                         ),
                         ElevatedButton.icon(
                           onPressed: () {
+                            if (!_isSubscribed) {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionScreen()));
+                              return;
+                            }
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -401,4 +613,20 @@ class _NoteDetailScreenState extends State<NoteDetailScreen>
       ),
     );
   }
+
+  // Wraps the PDF Viewer with a Color Filter to invert whites to dark greys for reading mode
+  Widget _buildPdfViewer(Widget child) {
+    if (!_isReadingMode) return child;
+
+    return ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        -1,  0,  0, 0, 255, // Invert Red
+         0, -1,  0, 0, 235, // Invert Green (slightly warm)
+         0,  0, -1, 0, 215, // Invert Blue (warmer filter)
+         0,  0,  0, 1,   0, // Alpha
+      ]),
+      child: child,
+    );
+  }
 }
+
